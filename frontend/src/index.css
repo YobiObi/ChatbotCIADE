@@ -1,0 +1,106 @@
+.card {
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-body ul {
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  list-style-type: disc;
+}
+
+.card-body li {
+  margin-bottom: 0.4rem;
+}
+
+.card-header.bg-primary {
+  background-color: #003366 !important;
+  color: white !important;
+}
+
+.card-header.bg-primary .btn-link {
+  color: white !important;
+}
+
+.collapse.show {
+  background-color: #f8fafad7;
+  border-top: 1px solid #dee2e6;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link-custom {
+  color: #212529;
+  text-decoration: none;
+  position: relative;
+  transition: all 0.3s ease;
+  padding-bottom: 4px;
+}
+
+.nav-link-custom:hover {
+  color: #003366; /* o el color institucional */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link-custom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0%;
+  height: 2px;
+  background-color: #003366;
+  transition: width 0.3s ease;
+}
+
+.nav-link-custom:hover::after {
+  width: 100%;
+}
+
+.bg-unab {
+  background-color: #003057;
+}
+
+.faq-banner {
+  background-image: url('/frontend/src/images/manos.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 100px; /* Opcional: Agregar un poco de espacio a la izquierda */
+}
+
+.faq-banner h1 {
+  color: white;
+  font-size: 2.2rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
+
+.faq-banner h1::before {
+  content: '';
+  display: inline-block;
+  width: 5px; /* Grosor de la línea */
+  height: 30px; /* Altura de la línea */
+  background-color: red; /* Color de la línea */
+  margin-right: 20px; /* Espacio entre la línea y el texto */
+}
+
+.acciones-cita {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/*CitasAlumno*/
+.encabezado-citas th {
+  background-color: #003366 !important;
+  color: white !important;
+  font-weight: bold !important;
+}
+
