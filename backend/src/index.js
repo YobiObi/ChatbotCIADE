@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes.js';
 import citaRoutes from "./routes/cita.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import institucionalRoutes from "./routes/institucional.routes.js";
 
 import prisma from './config/prisma.js';
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/api', authRoutes);
 app.use("/api", citaRoutes);
 app.use("/api", adminRoutes);
+app.use("/api", institucionalRoutes);
 
 // más rutas: app.use('/api/citas', citasRoutes) — las iremos separando igual
 

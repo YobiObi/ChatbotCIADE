@@ -1,4 +1,5 @@
 import * as authService from "../services/auth.service.js";
+import prisma from '../config/prisma.js';
 
 // Registro de usuario
 export const registerUser = async (req, res) => {

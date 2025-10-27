@@ -1,4 +1,3 @@
-// src/pages/Usuario/LoginUsuario.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Banner from "../../components/BannerTitulo";
@@ -11,8 +10,8 @@ export default function LoginUsuario() {
   });
 
   const [errorCorreo, setErrorCorreo] = useState("");
+  const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
-
   const { login } = useAuth();
 
   const handleChange = (e) => {
@@ -29,15 +28,38 @@ export default function LoginUsuario() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (errorCorreo) return;
+    if (errorCorreo || !formData.correo || !formData.contraseña) {
+      alert("Completa todos los campos correctamente");
+      return;
+    }
+
+    setCargando(true);
 
     try {
       const userCredential = await login(formData.correo, formData.contraseña);
-      console.log("Usuario autenticado:", userCredential.user);
-      navigate("/"); // redirige al inicio
+      const token = await userCredential.user.getIdToken();
+
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/me`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        const rol = data.role?.name;
+        if (rol === "Admin") navigate("/panel-admin");
+        else if (rol === "Coordinacion") navigate("/panel-coordinacion");
+        else if (rol === "Alumno") navigate("/agendarcita");
+        else navigate("/");
+      } else {
+        alert("No se pudo obtener el rol del usuario");
+      }
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
-      alert("Credenciales inválidas o usuario no registrado");
+      alert(error.message || "Credenciales inválidas o usuario no registrado");
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -84,8 +106,8 @@ export default function LoginUsuario() {
 
           {/* Botón */}
           <div className="text-center">
-            <button type="submit" className="btn btn-primary">
-              Ingresar
+            <button type="submit" className="btn-institucional" disabled={cargando}>
+              {cargando ? "Validando..." : "Ingresar"}
             </button>
           </div>
 
@@ -95,7 +117,7 @@ export default function LoginUsuario() {
               to="/registro"
               className="text-primary text-decoration-underline"
             >
-              Registrate
+              Regístrate
             </Link>
           </div>
         </form>

@@ -1,9 +1,15 @@
 import prisma from "../config/prisma.js";
 
-export const findByUid = (uid, select) =>
+export const findByUid = (uid, options = {}) =>
   prisma.user.findUnique({
     where: { uid },
-    ...(select && { select }),
+    ...options
+  });
+
+export const findById = (id, options = {}) =>
+  prisma.user.findUnique({
+    where: { id },
+    ...options
   });
 
 export const findByEmail = (email, select) =>

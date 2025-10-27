@@ -1,11 +1,22 @@
 import admin from '../config/firebase.js';
+import prisma from '../config/prisma.js';
 import * as userRepo from '../repositories/user.repository.js';
 
 // Registro de usuario
-export const register = async ({ token, firstName, lastName, rut, role, sede, campus, carrera, facultad }) => {
+export const register = async ({ token, firstName, lastName, rut, role, campus, carrera }) => {
   if (!token) {
     const e = new Error("Token no proporcionado");
     e.status = 401;
+    throw e;
+  }
+
+  const roleObj = await prisma.role.findUnique({ where: { name: role } });
+  const campusObj = await prisma.campus.findUnique({ where: { nombre: campus } });
+  const carreraObj = await prisma.carrera.findUnique({ where: { nombre: carrera } });
+
+  if (!roleObj || !campusObj || !carreraObj) {
+    const e = new Error("Datos institucionales inválidos");
+    e.status = 400;
     throw e;
   }
 
@@ -25,11 +36,9 @@ export const register = async ({ token, firstName, lastName, rut, role, sede, ca
     firstName,
     lastName,
     rut,
-    role,
-    sede,
-    campus,
-    carrera,
-    facultad,
+    roleId: roleObj.id,
+    campusId: campusObj.id,
+    carreraId: carreraObj.id
   });
 
   return user;
@@ -42,13 +51,13 @@ export const getUsuarioInfo = async (token) => {
   const decoded = await admin.auth().verifyIdToken(token);
   const uid = decoded.uid;
 
-  const user = await userRepo.findByUid(uid, {
-    firstName: true,
-    lastName: true,
-    campus: true,
-    carrera: true,
-    role: true,
-    email: true,
+  const user = await prisma.user.findUnique({
+    where: { uid },
+    include: {
+      role: true,
+      campus: true,
+      carrera: true
+    }
   });
 
   if (!user) {
@@ -56,6 +65,6 @@ export const getUsuarioInfo = async (token) => {
     error.status = 404;
     throw error;
   }
-
+  
   return user;
 };

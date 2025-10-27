@@ -104,3 +104,171 @@
   font-weight: bold !important;
 }
 
+/* Encabezado */
+.encabezado-citas th {
+  background-color: #003366 !important;
+  color: white !important;
+  font-weight: bold !important;
+}
+
+/* La tabla puede seguir con layout fijo */
+.tabla-citas {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* El <td> define el ancho de columna (sin forzar overflow aquí) */
+.tabla-citas td.descripcion-col,
+.tabla-citas td.motivo-col {
+  width: 140px;          /* ajusta si quieres más/menos */
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+/* El span interno se encarga del ellipsis */
+.tabla-citas td .truncate-1 {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================
+   Botones Institucionales CIADE
+   ============================ */
+
+.btn-institucional {
+  background-color: #003366;
+  color: #ffffff;
+  border: 2px solid #003366;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.6rem 1.4rem;
+  transition: all 0.25s ease-in-out;
+  letter-spacing: 0.3px;
+}
+
+.btn-institucional:hover {
+  background-color: #ffffff;
+  color: #003366;
+  border-color: #003366;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 51, 102, 0.2);
+}
+
+.btn-institucional:active {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+/* Variante con fondo blanco y texto azul */
+.btn-institucional-outline {
+  background-color: #ffffff;
+  color: #003366;
+  border: 2px solid #003366;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.6rem 1.4rem;
+  transition: all 0.25s ease-in-out;
+  letter-spacing: 0.3px;
+}
+
+.btn-institucional-outline:hover {
+  background-color: #003366;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 51, 102, 0.25);
+}
+
+/* ============================
+   Tamaños
+   ============================ */
+
+/* Pequeño */
+.btn-institucional-sm,
+.btn-institucional-outline-sm {
+  font-size: 0.90rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 5px;
+  background-color: #003366;
+  color: #ffffff;
+  transition: all 0.25s ease-in-out;
+}
+
+/* Grande */
+.btn-institucional-lg,
+.btn-institucional-outline-lg {
+  font-size: 1.1rem;
+  padding: 0.8rem 1.8rem;
+  border-radius: 8px;
+  letter-spacing: 0.4px;
+}
+
+/* Hover y active mantienen coherencia */
+.btn-institucional-sm:hover,
+.btn-institucional-lg:hover {
+  background-color: #ffffff;
+  color: #003366;
+  border-color: #003366;
+  transform: translateY(-1px);
+}
+
+.btn-institucional-outline-sm:hover,
+.btn-institucional-outline-lg:hover {
+  background-color: #ffffff;
+  color: #003366;
+  transform: translateY(-1px);
+}
+
+/* Accesibilidad y enfoque */
+.btn-institucional:focus,
+.btn-institucional-outline:focus {
+  outline: 2px solid #003366;
+  outline-offset: 2px;
+}
+
+/* Estado activo para botones tipo toggle */
+.btn-institucional.active,
+.btn-institucional-sm.active,
+.btn-institucional-lg.active {
+  background-color: #003366;
+  color: #ffffff;
+  border-color: #003366;
+  box-shadow: 0 3px 6px rgba(0, 51, 102, 0.2);
+}
+
+.btn-institucional-outline.active,
+.btn-institucional-outline-sm.active,
+.btn-institucional-outline-lg.active {
+  background-color: #ffffff;
+  color: #003366;
+  border-color: #003366;
+  box-shadow: 0 3px 6px rgba(0, 51, 102, 0.25);
+}
+
+/* color institucional en paginación */
+.page-link {
+  color: #0b437c;
+  border-color: #dfe3e8;
+}
+.page-link:hover {
+  color: #003366;
+  background-color: #f2f6fb;
+  border-color: #cfd6de;
+}
+.page-item.active .page-link {
+  background-color: #003366;
+  border-color: #003366;
+  color: #ffffff;
+}
+.page-item.disabled .page-link {
+  color: #a0a7b2;
+  border-color: #e6eaee;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800; /* Un color más oscuro para el fondo */
+    border-color: #d39e00; /* Un color para el borde */
+    color: white; /* Puedes cambiar el color del texto si lo deseas */
+}

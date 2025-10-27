@@ -13,6 +13,68 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+}
+
+model Facultad {
+  id       Int      @id @default(autoincrement())
+  nombre   String   @unique
+  carreras Carrera[]
+}
+
+model Carrera {
+  id         Int         @id @default(autoincrement())
+  nombre     String      @unique
+  facultad   Facultad    @relation(fields: [facultadId], references: [id])
+  facultadId Int
+  users      User[]
+  coordinaciones Coordinacion[]
+  carreraCampus CarreraCampus[]
+}
+
+model Campus {
+  id         Int         @id @default(autoincrement())
+  nombre     String      @unique
+  sede       Sede        @relation(fields: [sedeId], references: [id])
+  sedeId     Int
+  users      User[]
+  coordinaciones Coordinacion[]
+  carreraCampus CarreraCampus[]
+}
+
+model Sede {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  campus Campus[]
+}
+
+model CarreraCampus {
+  id         Int      @id @default(autoincrement())
+  carreraId  Int
+  campusId   Int
+
+  carrera    Carrera  @relation(fields: [carreraId], references: [id])
+  campus     Campus   @relation(fields: [campusId], references: [id])
+
+  @@unique([carreraId, campusId])
+}
+
+model Coordinacion {
+  id         String   @id @default(cuid())
+  userId     Int
+  campusId   Int
+  carreraId  Int
+
+  user       User     @relation(fields: [userId], references: [id])
+  campus     Campus   @relation(fields: [campusId], references: [id])
+  carrera    Carrera  @relation(fields: [carreraId], references: [id])
+
+  @@unique([userId, campusId, carreraId])
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   uid       String   @unique
@@ -20,28 +82,49 @@ model User {
   firstName String
   lastName  String
   rut       String   @unique
-  sede      String
-  campus    String
-  carrera   String
-  facultad  String
-  role      String
+
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  carreraId Int
+  carrera   Carrera  @relation(fields: [carreraId], references: [id])
+
+  campusId  Int
+  campus    Campus   @relation(fields: [campusId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  citas     Cita[]   @relation("Estudiante")
-  citasAsignadas Cita[] @relation("Coordinador")
+  citas           Cita[] @relation("Estudiante")
+  citasAsignadas  Cita[] @relation("Coordinador")
+
+  coordinaciones Coordinacion[]
+}
+
+enum ModalidadCita {
+  presencial
+  virtual
+}
+
+enum EstadoCita {
+  pendiente
+  aceptada
+  rechazada
 }
 
 model Cita {
   id             Int      @id @default(autoincrement())
-  estudiante     User     @relation("Estudiante", fields: [estudianteId], references: [uid])
-  estudianteId   String
-
-  coordinador     User     @relation("Coordinador", fields: [coordinadorId], references: [uid])
-  coordinadorId   String
-
-  modalidad      String
+  estudianteId   Int
+  coordinadorId  Int
+  fecha          DateTime
+  reagendadaEn DateTime?
+  gestionadaEn   DateTime? 
+  modalidad      ModalidadCita
   descripcion    String   @db.Text
-  estado         String   @default("pendiente")
+  estado         EstadoCita @default(pendiente)
+  observacion    String?
   createdAt      DateTime @default(now())
+
+  estudiante     User @relation("Estudiante", fields: [estudianteId], references: [id])
+  coordinador    User @relation("Coordinador", fields: [coordinadorId], references: [id])
 }

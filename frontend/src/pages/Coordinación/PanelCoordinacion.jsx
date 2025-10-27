@@ -1,254 +1,327 @@
-import { useEffect, useState } from "react";
+// src/pages/Coordinacion/PanelCoordinacion.jsx
+import { useEffect, useMemo, useState } from "react";
 import Banner from "../../components/BannerTitulo";
-import ModalDescripcion from "../../components/Modals/ModalDescripcion";
+
+import ModalTexto from "../../components/Modals/ModalTexto";
+import ModalAceptarCita from "../../components/Modals/Citas/ModalAceptarCita";
+import ModalRechazarCita from "../../components/Modals/Citas/ModalRechazarCita";
+import ModalReagendarCita from "../../components/Modals/Citas/ModalReagendarCita";
+
+import FiltrosInstitucionales from "../../components/FiltrosInstitucionales";
+import Paginacion from "../../components/Paginacion";
+import SortBar from "../../components/SortBar";
+import TextPreviewCell from "../../components/Table/TextPreviewCell";
+
+import { formatFechaCL } from "../../utils/formatFecha";
+import { sortCollection, SORT_MODES } from "../../utils/sortCollection";
 import { useAuth } from "../../context/AuthContext";
+import {
+  getCitasCoordinador,
+  aceptarCita,
+  rechazarCita,
+  reagendarCita,
+} from "../../services/citas.api";
 
 export default function PanelCoordinacion() {
-  const { token } = useAuth(); // Obtenemos token del contexto
+  const { user, token, cargando } = useAuth();
+  const rol = user?.role?.name;
 
   const [citas, setCitas] = useState([]);
-  const [descripcionSeleccionada, setDescripcionSeleccionada] = useState("");
-  const [mostrarModal, setMostrarModal] = useState(false);
 
-  const [filtroEstado, setFiltroEstado] = useState("");
-  const [filtroNombre, setFiltroNombre] = useState("");
-  const [filtroRut, setFiltroRut] = useState("");
-  const [fechaInicio, setFechaInicio] = useState("");
-  const [fechaFin, setFechaFin] = useState("");
+  // Modal genérico (Descripción/Motivo)
+  const [modalTxt, setModalTxt] = useState({ visible: false, title: "", text: "" });
+  const abrirModalTexto = (title, text) => setModalTxt({ visible: true, title, text });
+  const cerrarModalTexto = () => setModalTxt({ visible: false, title: "", text: "" });
 
+  // Modales de acción
+  const [citaSeleccionada, setCitaSeleccionada] = useState(null);
+  const [showAceptar, setShowAceptar] = useState(false);
+  const [showRechazar, setShowRechazar] = useState(false);
+  const [showReagendar, setShowReagendar] = useState(false);
+
+  // Filtros / orden / página
+  const [filtros, setFiltros] = useState({
+    rut: "",
+    alumno: "",
+    fechaInicio: "",
+    fechaFin: "",
+    estado: "",
+  });
+  const [sortMode, setSortMode] = useState(SORT_MODES.NEWEST);
   const [paginaActual, setPaginaActual] = useState(1);
   const citasPorPagina = 5;
 
-  // --- Cargar citas al montar el componente ---
-  useEffect(() => {
-    if (!token) return;
-
-    const fetchCitas = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/citas-coordinador`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (res.ok) setCitas(data.citas);
-        else console.error("Error al cargar citas:", data.error);
-      } catch (error) {
-        console.error("Error al conectar con el backend:", error);
-      }
-    };
-
-    fetchCitas();
-  }, [token]);
-
-  // --- Actualizar estado de una cita ---
-  const actualizarEstado = async (id, nuevoEstado) => {
-    if (!token) return;
-
-    const confirmacion = window.confirm(
-      `¿Estás seguro de ${nuevoEstado === "aceptada" ? "aceptar" : "rechazar"} esta cita?`
-    );
-    if (!confirmacion) return;
-
+  // Cargar citas
+  const refetch = async () => {
+    if (!token || rol !== "Coordinacion") return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/actualizar-estado-cita/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ estado: nuevoEstado })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setCitas((prev) =>
-          prev.map((cita) =>
-            cita.id === id ? { ...cita, estado: nuevoEstado } : cita
-          )
-        );
-      } else alert(data.error || "Error al actualizar estado");
-    } catch (error) {
-      console.error("Error al actualizar estado:", error);
-      alert("Error interno");
+      const data = await getCitasCoordinador(token);
+      setCitas(data.citas || []);
+    } catch (e) {
+      console.error("Error al cargar citas:", e);
     }
   };
+  useEffect(() => {
+    refetch();
+  }, [token, rol]);
 
-  // --- Modal de descripción ---
-  const abrirModalDescripcion = (descripcion) => {
-    setDescripcionSeleccionada(descripcion);
-    setMostrarModal(true);
-  };
-  const cerrarModal = () => {
-    setMostrarModal(false);
-    setDescripcionSeleccionada("");
-  };
+  // Filtros
+  const citasFiltradas = useMemo(() => {
+    return (citas || []).filter((cita) => {
+      const rut = cita.estudiante?.rut?.toLowerCase() || "";
+      const alumno = `${cita.estudiante?.firstName ?? ""} ${cita.estudiante?.lastName ?? ""}`.toLowerCase();
+      const estado = cita.estado?.toLowerCase() || "";
+      const fechaSolicitud = new Date(cita.createdAt).toISOString().slice(0, 10);
 
-  // --- Filtrado y paginación ---
-  const citasFiltradas = citas.filter((cita) => {
-    const coincideEstado = !filtroEstado || cita.estado.toLowerCase() === filtroEstado;
-    const fechaCita = new Date(cita.createdAt).toISOString().slice(0, 10);
-    const coincideFecha =
-      (!fechaInicio || fechaCita >= fechaInicio) &&
-      (!fechaFin || fechaCita <= fechaFin);
+      const coincideRut = !filtros.rut || rut.includes(filtros.rut.toLowerCase());
+      const coincideNombre = !filtros.alumno || alumno.includes(filtros.alumno.toLowerCase());
+      const coincideEstado = !filtros.estado || estado === filtros.estado.toLowerCase();
+      const coincideFecha =
+        (!filtros.fechaInicio || fechaSolicitud >= filtros.fechaInicio) &&
+        (!filtros.fechaFin || fechaSolicitud <= filtros.fechaFin);
 
-    const nombreCompleto = `${cita.estudiante.firstName} ${cita.estudiante.lastName}`.toLowerCase();
-    const coincideNombre = !filtroNombre || nombreCompleto.includes(filtroNombre);
+      return coincideRut && coincideNombre && coincideEstado && coincideFecha;
+    });
+  }, [citas, filtros]);
 
-    const coincideRut = !filtroRut || (cita.estudiante.rut && cita.estudiante.rut.toLowerCase().includes(filtroRut));
+  // Orden
+  const citasOrdenadas = useMemo(
+    () => sortCollection(citasFiltradas, sortMode, {
+      getCreatedAt: (c) => c.createdAt,      // para NEWEST/OLDEST
+      getEstado: (c) => c.estado,            // habilita PENDING_FIRST
+      // opcional: tiebreaker: (a,b) => a.id - b.id,
+    }),
+  [citasFiltradas, sortMode]
+);
 
-    return coincideEstado && coincideFecha && coincideNombre && coincideRut;
-  });
-
-  const totalPaginas = Math.ceil(citasFiltradas.length / citasPorPagina);
-  const paginas = Array.from({ length: totalPaginas }, (_, i) => i + 1);
+  // Paginación
+  const totalPaginas = Math.ceil(citasOrdenadas.length / citasPorPagina) || 1;
   const indiceInicio = (paginaActual - 1) * citasPorPagina;
-  const citasPaginadas = citasFiltradas.slice(indiceInicio, indiceInicio + citasPorPagina);
+  const citasPaginadas = citasOrdenadas.slice(indiceInicio, indiceInicio + citasPorPagina);
+
+  // Helpers
+  const renderFechaCita = (cita) => {
+    const estado = (cita.estado || "").toLowerCase();
+    const definida = estado === "aceptada" || !!cita.reagendadaEn;
+    if (estado === "rechazada") return <span className="text-muted">No aplica</span>;
+    if (estado === "pendiente") return <span className="text-secondary">Por confirmar</span>;
+    if (!definida || !cita.fecha) return "";
+    return formatFechaCL(cita.fecha);
+  };
+
+  if (cargando) {
+    return <div className="p-5 text-center">Cargando panel de coordinación...</div>;
+  }
 
   return (
     <>
       <Banner title="Panel de Coordinación" />
       <div className="container my-5">
-        {/* --- Filtros --- */}
-        <div className="mb-4 d-flex flex-wrap gap-3 align-items-end">
-          <div style={{ maxWidth: "200px" }}>
-            <label className="form-label fw-bold">Estado</label>
-            <select
-              className="form-select"
-              value={filtroEstado}
-              onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1); }}
-            >
-              <option value="">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="aceptada">Aceptada</option>
-              <option value="rechazada">Rechazada</option>
-            </select>
-          </div>
+        <FiltrosInstitucionales
+          filtros={filtros}
+          setFiltros={(nuevos) => {
+            setFiltros(nuevos);
+            setPaginaActual(1);
+          }}
+          campos={["rut", "alumno", "fechaInicio", "fechaFin", "estado"]}
+        />
 
-          <div style={{ maxWidth: "420px" }}>
-            <label className="form-label fw-bold">Rango de fechas</label>
-            <div className="d-flex gap-2">
-              <input type="date" className="form-control" value={fechaInicio}
-                onChange={(e) => { setFechaInicio(e.target.value); setPaginaActual(1); }} />
-              <input type="date" className="form-control" value={fechaFin}
-                onChange={(e) => { setFechaFin(e.target.value); setPaginaActual(1); }} />
-            </div>
-          </div>
+        <SortBar
+          value={sortMode}
+          onChange={(val) => { setSortMode(val); setPaginaActual(1); }}
+          modes={[SORT_MODES.NEWEST, SORT_MODES.OLDEST, SORT_MODES.PENDING_FIRST]}
+        />
 
-          <div style={{ maxWidth: "250px" }}>
-            <label className="form-label fw-bold">Nombre del estudiante</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Buscar por nombre"
-              value={filtroNombre}
-              onChange={(e) => { setFiltroNombre(e.target.value.toLowerCase()); setPaginaActual(1); }}
-            />
-          </div>
-
-          <div style={{ maxWidth: "200px" }}>
-            <label className="form-label fw-bold">RUT del estudiante</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Ej: 12.345.678-9"
-              value={filtroRut}
-              onChange={(e) => { setFiltroRut(e.target.value.toLowerCase()); setPaginaActual(1); }}
-            />
-          </div>
-
-          <div>
-            <button
-              className="btn btn-outline-secondary mt-4"
-              onClick={() => {
-                setFiltroEstado(""); setFiltroNombre(""); setFiltroRut("");
-                setFechaInicio(""); setFechaFin(""); setPaginaActual(1);
-              }}
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        </div>
-
-        {/* --- Tabla de citas --- */}
         {citasPaginadas.length === 0 ? (
           <p>No hay citas que coincidan con los filtros.</p>
         ) : (
           <>
-            <table className="table table-bordered table-hover">
-              <thead className="table-light encabezado-citas">
+            <table className="table table-bordered table-hover tabla-citas">
+              <thead className="table-light encabezado-citas text-center">
                 <tr>
-                  <th>#</th>
+                  <th style={{ width: "5%" }}>ID</th>
+                  <th style={{ width: "9%" }}>RUT</th>
                   <th>Estudiante</th>
-                  <th>RUT</th>
                   <th>Carrera</th>
+                  <th>Facultad</th>
+                  <th>Campus</th>
+                  <th>Modalidad</th>
                   <th>Descripción</th>
-                  <th>Fecha de Solicitud</th>
+                  <th>Fecha Solicitud</th>
+                  <th>Fecha Cita</th>
+                  <th>Motivo</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
+
               <tbody>
-                {citasPaginadas.map((cita, index) => (
-                  <tr key={cita.id}>
-                    <td>{indiceInicio + index + 1}</td>
-                    <td>{cita.estudiante.firstName} {cita.estudiante.lastName}</td>
-                    <td>{cita.estudiante.rut}</td>
-                    <td>{cita.estudiante.carrera}</td>
-                    <td
-                      style={{ cursor: "pointer", maxWidth: "350px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                      title="Haz clic para ver más"
-                      onClick={() => abrirModalDescripcion(cita.descripcion)}
-                    >
-                      {cita.descripcion}
-                    </td>
-                    <td>{new Date(cita.createdAt).toLocaleDateString()}</td>
-                    <td>
-                      <span className={`badge text-capitalize ${
-                        cita.estado.toLowerCase() === "aceptada"
-                          ? "bg-success"
-                          : cita.estado.toLowerCase() === "rechazada"
-                          ? "bg-danger"
-                          : "bg-secondary"
-                      }`}>
-                        {cita.estado}
-                      </span>
-                    </td>
-                    <td>
-                      {cita.estado.toLowerCase() === "pendiente" ? (
-                        <div className="acciones-cita d-flex gap-2 flex-wrap">
-                          <button className="btn btn-success btn-sm" onClick={() => actualizarEstado(cita.id, "aceptada")}>Aceptar</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => actualizarEstado(cita.id, "rechazada")}>Rechazar</button>
+                {citasPaginadas.map((cita) => {
+                  const yaAceptada = (cita.estado || "").toLowerCase() === "aceptada";
+                  const pendiente = (cita.estado || "").toLowerCase() === "pendiente";
+
+                  return (
+                    <tr key={cita.id}>
+                      <td className="text-muted fw-semibold" style={{ fontFamily: "monospace", width: "5%" }}>
+                        {cita.id}
+                      </td>
+
+                      <td>{cita.estudiante?.rut}</td>
+                      <td>{cita.estudiante?.firstName} {cita.estudiante?.lastName}</td>
+                      <td>{cita.estudiante?.carrera?.nombre || "—"}</td>
+                      <td>{cita.estudiante?.carrera?.facultad?.nombre || "—"}</td>
+                      <td>{cita.estudiante?.campus?.nombre || "—"}</td>
+                      <td className="text-capitalize">{cita.modalidad}</td>
+
+                      <td className="descripcion-col" title="Haz clic para ver completo">
+                        <TextPreviewCell
+                          label="Descripción"
+                          text={cita.descripcion}
+                          onOpen={abrirModalTexto}
+                          max={100}
+                        />
+                      </td>
+
+                      <td>{formatFechaCL(cita.createdAt)}</td>
+                      <td>{renderFechaCita(cita)}</td>
+
+                      <td className="motivo-col" title="Haz clic para ver completo">
+                        <TextPreviewCell
+                          label="Motivo"
+                          text={(cita.observacion || "").trim()}
+                          onOpen={abrirModalTexto}
+                          max={80}
+                        />
+                      </td>
+
+                      <td>
+                        <span
+                          className={`badge text-capitalize ${
+                            yaAceptada
+                              ? "bg-success"
+                              : (cita.estado || "").toLowerCase() === "rechazada"
+                              ? "bg-danger"
+                              : "bg-secondary"
+                          }`}
+                        >
+                          {cita.estado}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="acciones-cita d-flex gap-2 flex-wrap" >
+                          {pendiente && (
+                            <>
+                              <button
+                                className="btn btn-success btn-sm"
+                                style = {{width:80}}
+                                onClick={() => { setCitaSeleccionada(cita); setShowAceptar(true); }}
+                              >
+                                Aceptar
+                              </button>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                style = {{width:80}}
+                                onClick={() => { setCitaSeleccionada(cita); setShowRechazar(true); }}
+                              >
+                                Rechazar
+                              </button>
+                            </>
+                          )}
+
+                          {yaAceptada && (
+                            <button
+                              className="btn btn-warning btn-sm text-white"
+                              style = {{width:80}}
+                              onClick={() => { setCitaSeleccionada(cita); setShowReagendar(true); }}
+                            >
+                              Reagendar
+                            </button>
+                          )}
+
+                          {!pendiente && !yaAceptada && (
+                            <span className="text-muted">Ya gestionada</span>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-muted">Ya gestionada</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
-            {/* --- Paginación --- */}
             <div className="d-flex justify-content-between align-items-center mt-3">
               <span>Página {paginaActual} de {totalPaginas}</span>
-              <nav>
-                <ul className="pagination mb-0">
-                  {paginas.map((num) => (
-                    <li key={num} className={`page-item ${num === paginaActual ? "active" : ""}`}>
-                      <button className="page-link" onClick={() => setPaginaActual(num)}>{num}</button>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
+              <Paginacion
+                paginaActual={paginaActual}
+                totalPaginas={totalPaginas}
+                onCambiar={setPaginaActual}
+              />
             </div>
           </>
         )}
 
-        {/* Modal reutilizable */}
-        <ModalDescripcion
-          visible={mostrarModal}
-          descripcion={descripcionSeleccionada}
-          onClose={cerrarModal}
+        {/* Modal Texto unificado (Descripción / Motivo) */}
+        <ModalTexto
+          visible={modalTxt.visible}
+          title={modalTxt.title}
+          text={modalTxt.text}
+          onClose={cerrarModalTexto}
         />
+
+        {/* Aceptar */}
+        {showAceptar && (
+          <ModalAceptarCita
+            cita={citaSeleccionada}
+            onClose={() => setShowAceptar(false)}
+            onSubmit={async ({ enlaceVirtual, ubicacion, fechaISO }) => {
+              try {
+                await aceptarCita(
+                  citaSeleccionada.id,
+                  { enlaceVirtual, ubicacion, fechaISO },
+                  token
+                );
+                setShowAceptar(false);
+                await refetch();
+              } catch (e) {
+                alert(e.message);
+              }
+            }}
+          />
+        )}
+
+        {/* Rechazar */}
+        {showRechazar && (
+          <ModalRechazarCita
+            onClose={() => setShowRechazar(false)}
+            onSubmit={async ({ motivo }) => {
+              try {
+                await rechazarCita(citaSeleccionada.id, { motivo }, token);
+                setShowRechazar(false);
+                await refetch();
+              } catch (e) {
+                alert(e.message);
+              }
+            }}
+          />
+        )}
+
+        {/* Reagendar */}
+        {showReagendar && (
+          <ModalReagendarCita
+            cita={citaSeleccionada}
+            onClose={() => setShowReagendar(false)}
+            onSubmit={async (payload) => {
+              try {
+                await reagendarCita(citaSeleccionada.id, payload, token);
+                setShowReagendar(false);
+                await refetch();
+              } catch (e) {
+                alert(e.message);
+              }
+            }}
+          />
+        )}
       </div>
     </>
   );

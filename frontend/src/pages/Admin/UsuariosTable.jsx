@@ -1,37 +1,78 @@
-import { useState, useEffect } from "react";
-import { auth } from "../../firebase";
+import { useEffect, useMemo, useState } from "react";
 import Paginacion from "../../components/Paginacion";
+import FiltrosInstitucionales from "../../components/FiltrosInstitucionales";
+import { formatFechaCL } from "../../utils/formatFecha";
+import SortBar from "../../components/SortBar";
+import { SORT_MODES } from "../../utils/sortCollection";
+import { auth } from "../../firebase";
 
 export default function UsuariosTable({ usuarios }) {
   const [listaUsuarios, setListaUsuarios] = useState([]);
   const [paginaActual, setPaginaActual] = useState(1);
-  const [filtro, setFiltro] = useState({ nombre: "", email: "", campus: "" });
   const [seleccionados, setSeleccionados] = useState([]);
+  const [sortMode, setSortMode] = useState(SORT_MODES.NEWEST);
+
+  const [filtro, setFiltro] = useState({
+    rut: "", nombre: "", email: "",
+    campus: "", facultad: "", sede: "", rol: ""
+  });
 
   const usuariosPorPagina = 10;
 
-  // Sincroniza listaUsuarios con usuarios externos, ordenando por fecha si existe
   useEffect(() => {
-    const ordenados = [...usuarios].sort((a, b) => {
-      const fechaA = new Date(a.createdAt || 0).getTime();
-      const fechaB = new Date(b.createdAt || 0).getTime();
-      return fechaB - fechaA;
-    });
-    setListaUsuarios(ordenados);
+    setListaUsuarios(usuarios || []);
   }, [usuarios]);
 
-  const filtrarUsuarios = listaUsuarios.filter((u) => {
-    const nombre = `${u.firstName} ${u.lastName}`.toLowerCase();
-    return (
-      nombre.includes(filtro.nombre.toLowerCase()) &&
-      u.email.toLowerCase().includes(filtro.email.toLowerCase()) &&
-      u.campus.toLowerCase().includes(filtro.campus.toLowerCase())
-    );
-  });
+  // Resumen de roles (Coordinación, Alumnos, Admin)
+  const resumenRoles = useMemo(() => {
+    const acc = { Coordinacion: 0, Alumno: 0, Admin: 0 };
+    for (const u of listaUsuarios) {
+      const r = u.role?.name;
+      if (r && acc[r] !== undefined) acc[r]++;
+    }
+    return acc;
+  }, [listaUsuarios]);
 
-  const totalPaginas = Math.ceil(filtrarUsuarios.length / usuariosPorPagina);
+  // Filtrar
+  const usuariosFiltrados = useMemo(() => {
+    return (listaUsuarios || []).filter((u) => {
+      const nombre = `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim().toLowerCase();
+      const rol = u.role?.name?.toLowerCase() || "";
+      const campus = u.campus?.nombre?.toLowerCase() || "";
+      const facultad = u.carrera?.facultad?.nombre?.toLowerCase() || "";
+      const sede = u.campus?.sede?.nombre?.toLowerCase() || "";
+      const email = u.email?.toLowerCase() || "";
+      const rut = (u.rut || "").toLowerCase();
+
+      return (
+        nombre.includes((filtro.nombre || "").toLowerCase()) &&
+        email.includes((filtro.email || "").toLowerCase()) &&
+        campus.includes((filtro.campus || "").toLowerCase()) &&
+        facultad.includes((filtro.facultad || "").toLowerCase()) &&
+        sede.includes((filtro.sede || "").toLowerCase()) &&
+        rut.includes((filtro.rut || "").toLowerCase()) &&
+        rol.includes((filtro.rol || "").toLowerCase())
+      );
+    });
+  }, [listaUsuarios, filtro]);
+
+  // Ordenar según sortMode
+  const usuariosOrdenados = useMemo(() => {
+    const arr = [...usuariosFiltrados];
+    arr.sort((a, b) => {
+      const aT = new Date(a.createdAt || 0).getTime();
+      const bT = new Date(b.createdAt || 0).getTime();
+      if (sortMode === SORT_MODES.NEWEST) return bT - aT;
+      if (sortMode === SORT_MODES.OLDEST) return aT - bT;
+      return 0;
+    });
+    return arr;
+  }, [usuariosFiltrados, sortMode]);
+
+  // Paginación
+  const totalPaginas = Math.ceil(usuariosOrdenados.length / usuariosPorPagina) || 1;
   const indiceInicio = (paginaActual - 1) * usuariosPorPagina;
-  const usuariosPaginados = filtrarUsuarios.slice(indiceInicio, indiceInicio + usuariosPorPagina);
+  const usuariosPaginados = usuariosOrdenados.slice(indiceInicio, indiceInicio + usuariosPorPagina);
 
   const toggleSeleccion = (uid) => {
     setSeleccionados((prev) =>
@@ -39,189 +80,148 @@ export default function UsuariosTable({ usuarios }) {
     );
   };
 
-  const actualizarCampo = async (uid, campo, valor) => {
-    const confirmar = window.confirm(`¿Estás seguro de cambiar el ${campo} a "${valor}"?`);
-    if (!confirmar) return;
-
-    const token = await auth.currentUser.getIdToken();
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/usuarios/${uid}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ [campo]: valor }),
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      setListaUsuarios((prev) =>
-        prev.map((u) => (u.uid === uid ? { ...u, [campo]: valor } : u))
-      );
-    } else {
-      alert(data.error || `Error al actualizar ${campo}`);
-    }
-  };
-
-  const eliminarSeleccionados = async () => {
-    if (seleccionados.length === 0) {
-      alert("No hay usuarios seleccionados");
-      return;
-    }
-
-    const confirmar = window.confirm(`¿Deseas eliminar ${seleccionados.length} usuario(s)?`);
-    if (!confirmar) return;
-
-    try {
-      const token = await auth.currentUser.getIdToken();
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/usuarios`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ uids: seleccionados }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setListaUsuarios((prev) => prev.filter((u) => !seleccionados.includes(u.uid)));
-        setSeleccionados([]);
-        alert(data.message || "Usuarios eliminados correctamente");
-      } else {
-        alert(data.error || "Error al eliminar usuarios");
-      }
-    } catch (error) {
-      console.error("Error al eliminar usuarios:", error);
-      alert("Error interno");
-    }
-  };
-
   return (
     <>
-      {/* Filtros */}
-      <div className="row g-3 mb-3">
-        <div className="col-md-4">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Filtrar por nombre"
-            value={filtro.nombre}
-            onChange={(e) => {
-              setFiltro({ ...filtro, nombre: e.target.value });
-              setPaginaActual(1);
-            }}
-          />
-        </div>
-        <div className="col-md-4">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Filtrar por email"
-            value={filtro.email}
-            onChange={(e) => {
-              setFiltro({ ...filtro, email: e.target.value });
-              setPaginaActual(1);
-            }}
-          />
-        </div>
-        <div className="col-md-4">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Filtrar por campus"
-            value={filtro.campus}
-            onChange={(e) => {
-              setFiltro({ ...filtro, campus: e.target.value });
-              setPaginaActual(1);
-            }}
+      {/* Filtros + SortBar + Resumen */}
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <FiltrosInstitucionales
+          filtros={filtro}
+          setFiltros={(nuevos) => { setFiltro(nuevos); setPaginaActual(1); }}
+          campos={["rut", "nombre", "email", "campus", "facultad", "sede", "rol"]}
+        />
+
+        {/* Resumen de roles */}
+        <div className="text-end">
+          <div className="d-flex flex-wrap justify-content-end gap-2 mb-2">
+            <span className="badge bg-secondary">
+              Coordinadores CIADE: {resumenRoles.Coordinacion}
+            </span>
+            <span className="badge bg-secondary">
+              Alumnos: {resumenRoles.Alumno}
+            </span>
+            <span className="badge bg-secondary">
+              Admin: {resumenRoles.Admin}
+            </span>
+          </div>
+
+          {/* SortBar de orden */}
+          <SortBar
+            value={sortMode}
+            onChange={(mode) => { setSortMode(mode); setPaginaActual(1); }}
+            modes={[SORT_MODES.NEWEST, SORT_MODES.OLDEST]}
           />
         </div>
       </div>
 
-      {/* Botón eliminar seleccionados */}
       {seleccionados.length > 0 && (
-        <div className="mb-3">
-          <button className="btn btn-danger btn-sm" onClick={eliminarSeleccionados}>
-            Eliminar {seleccionados.length} seleccionada(s)
-          </button>
-        </div>
-      )}
+      <div className="mb-3 d-flex gap-2 align-items-center">
+        <button
+          className="btn btn-danger btn-sm"
+          onClick={async () => {
+            const ok = window.confirm(`¿Eliminar ${seleccionados.length} usuario(s)? Esta acción también intentará borrar sus cuentas en Firebase.`);
+            if (!ok) return;
+            try {
+              const token = await auth.currentUser.getIdToken();
+              const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/usuarios`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ uids: seleccionados }), // tu endpoint de borrado masivo usa UIDs
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data?.error || "No se pudo eliminar");
+
+              // refresco local
+              setListaUsuarios(prev => prev.filter(u => !seleccionados.includes(u.uid)));
+              setSeleccionados([]);
+              alert(data?.message || "Usuarios eliminados correctamente");
+            } catch (e) {
+              alert(e.message);
+            }
+          }}
+        >
+          Eliminar {seleccionados.length} seleccionada(s)
+        </button>
+        <span className="text-muted small">Se eleminarán en la Base de Datos.</span>
+      </div>
+    )}
 
       {/* Tabla */}
-      <table className="table table-bordered">
-        <thead className="encabezado-citas">
+      <table className="table table-bordered table-hover">
+        <thead className="encabezado-citas text-center">
           <tr>
-            <th>
+            <th style={{ width: "2%" }}>
               <input
                 type="checkbox"
                 onChange={(e) =>
-                  setSeleccionados(e.target.checked ? usuariosPaginados.map((u) => u.uid) : [])
+                  setSeleccionados(
+                    e.target.checked ? usuariosPaginados.map((u) => u.uid) : []
+                  )
                 }
                 checked={
-                  usuariosPaginados.every((u) => seleccionados.includes(u.uid)) &&
-                  usuariosPaginados.length > 0
+                  usuariosPaginados.length > 0 &&
+                  usuariosPaginados.every((u) => seleccionados.includes(u.uid))
                 }
               />
             </th>
-            <th>RUT</th>
+            <th>ID</th>
+            <th style={{ width: "9%" }}>RUT</th>
             <th>Nombre</th>
             <th>Email</th>
+            <th>Sede</th>
             <th>Campus</th>
+            <th>Facultad</th>
+            <th>Carrera</th>
+            <th style={{ width: "8%" }}>Creado</th>
+            <th>Actualizado</th>
             <th>Rol</th>
           </tr>
         </thead>
+
         <tbody>
-          {usuariosPaginados.map((u) => (
-            <tr key={u.uid}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={seleccionados.includes(u.uid)}
-                  onChange={() => toggleSeleccion(u.uid)}
-                />
-              </td>
-              <td>{u.rut ?? "—"}</td>
-              <td>{u.firstName} {u.lastName}</td>
-              <td>{u.email}</td>
-              <td>
-                <select
-                  className="form-select form-select-sm"
-                  value={u.campus}
-                  onChange={(e) => actualizarCampo(u.uid, "campus", e.target.value)}
-                >
-                  <option value="Antonio Varas">Antonio Varas</option>
-                  <option value="Los Leones">Los Leones</option>
-                  <option value="Bellavista">Bellavista</option>
-                  <option value="Creativo">Creativo</option>
-                  <option value="República">República</option>
-                  <option value="Casona">Casona</option>
-                  <option value="Viña del Mar">Viña del Mar</option>
-                  <option value="Concepción">Concepción</option>
-                </select>
-              </td>
-              <td>
-                <select
-                  className="form-select form-select-sm"
-                  value={u.role}
-                  onChange={(e) => actualizarCampo(u.uid, "role", e.target.value)}
-                >
-                  <option value="ALUMNO">ALUMNO</option>
-                  <option value="COORDINACION">COORDINACION</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
+          {usuariosPaginados.length === 0 ? (
+            <tr>
+              <td colSpan="12" className="text-center py-4 text-muted">
+                No hay resultados para este filtro.
               </td>
             </tr>
-          ))}
+          ) : (
+            usuariosPaginados.map((u) => (
+              <tr key={u.uid}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={seleccionados.includes(u.uid)}
+                    onChange={() => toggleSeleccion(u.uid)}
+                  />
+                </td>
+                <td className="text-muted fw-semibold" style={{ fontFamily: "monospace" }}>
+                  {u.id}
+                </td>
+                <td>{u.rut ?? "—"}</td>
+                <td>{u.firstName} {u.lastName}</td>
+                <td>{u.email}</td>
+                <td>{u.campus?.sede?.nombre || "—"}</td>
+                <td>{u.campus?.nombre || "—"}</td>
+                <td>{u.carrera?.facultad?.nombre || "—"}</td>
+                <td>{u.carrera?.nombre || "—"}</td>
+                <td>{formatFechaCL(u.createdAt)}</td>
+                <td>{formatFechaCL(u.updatedAt)}</td>
+                <td>{u.role?.name || "—"}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
 
       {/* Paginación */}
-      <Paginacion
-        paginaActual={paginaActual}
-        totalPaginas={totalPaginas}
-        onCambiar={setPaginaActual}
-      />
+      <div className="d-flex justify-content-between align-items-center mt-3">
+        <span>Página {paginaActual} de {totalPaginas}</span>
+        <Paginacion
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          onCambiar={setPaginaActual}
+        />
+      </div>
     </>
   );
 }

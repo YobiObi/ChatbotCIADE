@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Banner from "../../components/BannerTitulo";
-import carrerasData from "../../utils/carrerasData";
 import { useAuth } from "../../context/AuthContext";
 
 export default function RegistroUsuario() {
@@ -21,12 +20,51 @@ export default function RegistroUsuario() {
 
   const [errorCorreo, setErrorCorreo] = useState("");
   const [errorRUT, setErrorRUT] = useState("");
+  const [campusList, setCampusList] = useState([]);
+  const [carreraList, setCarreraList] = useState([]);
 
   const sedes = ["Santiago", "Viña del Mar", "Concepción"];
-  const campusPorSede = {
-    Santiago: ["Antonio Varas", "Los Leones", "Bellavista", "República", "Creativo", "Casona"],
-    "Viña del Mar": ["Viña del Mar"],
-    Concepción: ["Concepción"]
+
+  useEffect(() => {
+  if (formData.sede) {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/institucional/campus?sede=${formData.sede}`)
+      .then(res => res.json())
+      .then(data => {
+        setCampusList(data);
+        setFormData(prev => ({ ...prev, campus: "", carrera: "" })); // limpia selección previa
+      })
+      .catch(err => console.error("Error al obtener campus:", err));
+  }
+}, [formData.sede]);
+
+
+  useEffect(() => {
+  if (formData.campus) {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/institucional/carreras?campus=${formData.campus}`)
+      .then(res => res.json())
+      .then(data => {
+        setCarreraList(data);
+        setFormData(prev => ({ ...prev, carrera: "" }));
+      })
+      .catch(err => console.error("Error al obtener carreras:", err));
+  }
+}, [formData.campus]);
+
+
+  const validarRUT = (rutCompleto) => {
+    const rut = rutCompleto.replace(/\./g, "").replace("-", "");
+    if (!/^\d{7,8}[0-9kK]$/.test(rut)) return false;
+
+    const cuerpo = rut.slice(0, -1);
+    const dv = rut.slice(-1).toLowerCase();
+    let suma = 0, multiplo = 2;
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+      suma += parseInt(cuerpo[i]) * multiplo;
+      multiplo = multiplo < 7 ? multiplo + 1 : 2;
+    }
+    const dvEsperado = 11 - (suma % 11);
+    const dvCalculado = dvEsperado === 11 ? "0" : dvEsperado === 10 ? "k" : dvEsperado.toString();
+    return dv === dvCalculado;
   };
 
   const handleChange = (e) => {
@@ -43,31 +81,8 @@ export default function RegistroUsuario() {
     }
   };
 
-  function validarRUT(rutCompleto) {
-    const rut = rutCompleto.replace(/\./g, "").replace("-", "");
-    if (!/^\d{7,8}[0-9kK]$/.test(rut)) return false;
+  const facultadSeleccionada = carreraList.find(c => c.nombre === formData.carrera)?.facultad || "";
 
-    const cuerpo = rut.slice(0, -1);
-    const dv = rut.slice(-1).toLowerCase();
-    let suma = 0, multiplo = 2;
-    for (let i = cuerpo.length - 1; i >= 0; i--) {
-      suma += parseInt(cuerpo[i]) * multiplo;
-      multiplo = multiplo < 7 ? multiplo + 1 : 2;
-    }
-    const dvEsperado = 11 - (suma % 11);
-    const dvCalculado = dvEsperado === 11 ? "0" : dvEsperado === 10 ? "k" : dvEsperado.toString();
-    return dv === dvCalculado;
-  }
-
-  // Filtrado dinámico
-  const campusFiltrados = campusPorSede[formData.sede] || [];
-
-  const carrerasFiltradas = carrerasData.filter(carrera =>
-    carrera.sede.includes(formData.sede) &&
-    carrera.campus.includes(formData.campus)
-  );
-
-  const facultadSeleccionada = carrerasData.find(c => c.carrera === formData.carrera)?.facultad || "";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +99,7 @@ export default function RegistroUsuario() {
         campus: formData.campus,
         carrera: formData.carrera,
         facultad: facultadSeleccionada,
-        role: "ALUMNO"
+        role: "Alumno"
       });
 
       alert("Usuario registrado exitosamente");
@@ -172,10 +187,13 @@ export default function RegistroUsuario() {
               disabled={!formData.sede}
             >
               <option value="">Selecciona tu campus</option>
-              {campusFiltrados.map((campus) => (
-                <option key={campus} value={campus}>{campus}</option>
+              {campusList.map((campus) => (
+                <option key={campus.id} value={campus.nombre}>{campus.nombre}</option>
               ))}
             </select>
+            {formData.sede && campusList.length === 0 && (
+              <p className="text-danger mt-2">No hay campus disponibles para esta sede.</p>
+            )}
           </div>
 
           {/* Carrera */}
@@ -190,8 +208,8 @@ export default function RegistroUsuario() {
               disabled={!formData.campus}
             >
               <option value="">Selecciona tu carrera</option>
-              {carrerasFiltradas.map(({ carrera }) => (
-                <option key={carrera} value={carrera}>{carrera}</option>
+              {carreraList.map((carrera) => (
+                <option key={carrera.id} value={carrera.nombre}>{carrera.nombre}</option>
               ))}
             </select>
           </div>
@@ -239,7 +257,7 @@ export default function RegistroUsuario() {
 
           {/* Botón */}
           <div className="text-center">
-            <button type="submit" className="btn btn-primary">Registrarse</button>
+            <button type="submit" className="btn-institucional">Registrarse</button>
           </div>
 
           <div className="mt-3 text-center">

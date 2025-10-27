@@ -1,11 +1,11 @@
 import Banner from "../../components/BannerTitulo";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import coordinadoresPorCampus from "../../utils/coordinacionData";
 import * as authService from "../../services/auth.service.js";
 
 export default function AgendarCita() {
-  const { token } = useAuth();
+  const { token, cargando } = useAuth();
+  
   const [formData, setFormData] = useState({
     correo: "",
     modalidad: "",
@@ -23,8 +23,8 @@ export default function AgendarCita() {
     try {
       const data = await authService.getUsuarioInfo(token);
       setFormData((prev) => ({ ...prev, correo: data.email }));
-      setCampusUsuario(data.campus);
-      setCarreraUsuario(data.carrera);
+      setCampusUsuario(data.campus?.nombre || "");
+      setCarreraUsuario(data.carrera?.nombre || "");
       console.log("Datos del usuario:", data);
 
     } catch (error) {
@@ -36,24 +36,29 @@ export default function AgendarCita() {
 }, [token]);
 
 useEffect(() => {
-  if (!campusUsuario || !carreraUsuario) return;
+  if (!token) return;
 
-  const coordinador = coordinadoresPorCampus.find(c =>
-    c.campus.includes(campusUsuario) &&
-    c.carreras.includes(carreraUsuario)
-  );
+  const fetchCoordinador = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/coordinador-asignado`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-  setCoordinadorCIADE(coordinador || null);
-}, [campusUsuario, carreraUsuario]);
+      const data = await res.json();
+      if (res.ok) {
+        setCoordinadorCIADE(data.coordinador);
+      } else {
+        console.warn("No hay coordinador asignado:", data.error);
+        setCoordinadorCIADE(null);
+      }
+    } catch (error) {
+      console.error("Error al obtener coordinador CIADE:", error);
+      setCoordinadorCIADE(null);
+    }
+  };
 
-coordinadoresPorCampus.forEach(c => {
-  console.log("Coordinador:", c.nombre);
-  console.log("Campus:", c.campus);
-  console.log("Carreras:", c.carreras);
-});
-console.log("Campus:", campusUsuario);
-console.log("Carrera:", carreraUsuario);
-console.log("Coordinadores disponibles:", coordinadoresPorCampus);
+  fetchCoordinador();
+}, [token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,6 +73,11 @@ console.log("Coordinadores disponibles:", coordinadoresPorCampus);
       return;
     }
 
+    if (!formData.modalidad || !formData.descripcion.trim()) {
+      alert("Por favor completa todos los campos antes de enviar.");
+      return;
+    }
+
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/crear-cita`, {
         method: "POST",
@@ -76,7 +86,7 @@ console.log("Coordinadores disponibles:", coordinadoresPorCampus);
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          coordinadorId: coordinadorCIADE.uid,
+          coordinadorId: coordinadorCIADE.id,
           modalidad: formData.modalidad,
           descripcion: formData.descripcion,
         }),
@@ -84,7 +94,7 @@ console.log("Coordinadores disponibles:", coordinadoresPorCampus);
 
       const data = await res.json();
       if (res.ok) {
-        alert("Cita solicitada con éxito. La coordinación CIADE se contactará contigo por correo alrededor de los próximos 3 días.");
+        alert(`Cita solicitada con éxito. La coordinación CIADE (${coordinadorCIADE.firstName} ${coordinadorCIADE.lastName}) se contactará contigo por correo en los próximos días.`);
         setFormData({ ...formData, modalidad: "", descripcion: "" });
       } else {
         console.error("Respuesta del backend:", data);
@@ -95,6 +105,9 @@ console.log("Coordinadores disponibles:", coordinadoresPorCampus);
       alert("Hubo un problema al registrar la cita.");
     }
   };
+
+  if (cargando)
+    return <div className="p-5 text-center">Cargando agendamiento...</div>;
 
   return (
     <>
@@ -117,12 +130,12 @@ console.log("Coordinadores disponibles:", coordinadoresPorCampus);
           {/* Coordinador CIADE */}
           <div className="mb-3">
             <label className="form-label">Coordinación CIADE</label>
-            <input
-              type="text"
-              className="form-control"
-              value={coordinadorCIADE?.nombre || "No asignado"}
-              disabled
-            />
+            {coordinadorCIADE && (
+              <div className="alert alert-info mt-2">
+                Coordinador asignado: <strong>{coordinadorCIADE.firstName} {coordinadorCIADE.lastName}</strong><br />
+              </div>
+            )}
+
             {!coordinadorCIADE && campusUsuario && carreraUsuario && (
               <div className="alert alert-warning mt-2">
                 No hay coordinadores asignados para la carrera <strong>{carreraUsuario}</strong> en el campus <strong>{campusUsuario}</strong>.
@@ -141,8 +154,8 @@ console.log("Coordinadores disponibles:", coordinadoresPorCampus);
               required
             >
               <option value="">Selecciona modalidad</option>
-              <option value="Presencial">Presencial</option>
-              <option value="Virtual">Virtual</option>
+              <option value="presencial">Presencial</option>
+              <option value="virtual">Virtual</option>
             </select>
           </div>
 
@@ -162,7 +175,7 @@ console.log("Coordinadores disponibles:", coordinadoresPorCampus);
           </div>
 
           <div className="text-center">
-            <button type="submit" className="btn btn-primary">Solicitar Cita</button>
+            <button type="submit" className="btn-institucional">Solicitar Cita</button>
           </div>
         </form>
       </div>

@@ -1,58 +1,38 @@
-import { useEffect, useState } from "react";
+// src/routes/BloquearSiAutenticado.jsx
+import { useAuth } from "../context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+import { useEffect } from "react";
+import { getPathByRole } from "../utils/redirectByRole";
 
 export default function BloquearSiAutenticado({ children }) {
-  const [logueado, setLogueado] = useState(false);
-  const [cargando, setCargando] = useState(true);
-  const [segundosRestantes, setSegundosRestantes] = useState(5);
+  const { user, cargando } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setLogueado(!!user);
-      setCargando(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (logueado) {
-      const countdown = setInterval(() => {
-        setSegundosRestantes((prev) => prev - 1);
-      }, 1000);
-
-      const redireccion = setTimeout(() => {
-        navigate("/");
-      }, 5000);
-
-      return () => {
-        clearInterval(countdown);
-        clearTimeout(redireccion);
-      };
-    }
-  }, [logueado, navigate]);
-
-  if (cargando) return null;
-
+  // Rutas donde NO tiene sentido estar si ya hay sesión
   const rutasBloqueadas = ["/login", "/registro", "/acceso-usuario"];
   const debeBloquear = rutasBloqueadas.includes(location.pathname);
 
-  if (logueado && debeBloquear) {
+  useEffect(() => {
+    if (!cargando && user && debeBloquear) {
+      const destino = getPathByRole(user.role?.name);
+      if (destino && location.pathname !== destino) {
+        navigate(destino, { replace: true }); // redirección inmediata
+      }
+    }
+  }, [user, cargando, debeBloquear, location.pathname, navigate]);
+
+  if (cargando) {
     return (
       <div className="container my-5 text-center">
-        <h4 className="text-danger">Ya tienes una sesión activa</h4>
-        <p>Serás redirigid@ a la página principal en <strong>{segundosRestantes}</strong> segundos...</p>
-        <button
-          className="btn btn-outline-primary mt-3"
-          onClick={() => navigate("/")}
-        >
-          Volver
-        </button>
+        <p>Cargando sesión, por favor espera...</p>
       </div>
     );
+  }
+
+  // Si hay usuario y está en /login o /registro, no mostramos nada: lo estamos redirigiendo
+  if (user && debeBloquear) {
+    return null;
   }
 
   return children;

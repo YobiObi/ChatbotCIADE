@@ -6,7 +6,7 @@ export const verifyToken = async (req, res, next) => {
     if (!token) throw new Error("Token no proporcionado");
 
     const decoded = await admin.auth().verifyIdToken(token);
-    req.user = decoded; // <- aquí se agrega uid, email, etc.
+    req.user = { uid: decoded.uid, email: decoded.email }; // <- aquí se agrega uid, email, etc.
     next();
   } catch (error) {
     console.error("Error en middleware verificarToken:", error);

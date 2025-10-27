@@ -1,18 +1,19 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 
-import ChatbotIconSVG from './components/ChatbotIconSVG.jsx';
-import DialogflowMessenger from './components/DialogflowMessenger.jsx';
+import ChatbotIconSVG from "./components/Chatbot/ChatbotIconSVG.jsx"
+import DialogflowMessenger from './components/Chatbot/DialogflowMessenger.jsx';
 
 
 import RutaProtegida from "./routes/RutaProtegida";
 
 import BloquearSiAutenticado from "./components/BloquearSiAutenticado";
-import Header from "./components/Header";
+import Header from "./components/Headers/Header.jsx";
 import Footer from "./components/Footer";
 
 import Principal from "./pages/Principal"
 import FAQ from "./pages/Usuario/FAQ"
+import CoordinacionesCIADE from "./pages/CoordinacionesCIADE";
 import AccesoUsuario from "./pages/Usuario/AccesoUsuario"
 import RegistroUsuario from "./pages/Usuario/RegistroUsuario";
 import Login from "./pages/Usuario/LoginUsuario";
@@ -33,13 +34,14 @@ function App() {
               <Routes>
                 <Route path="/" element={<Principal />} />
                 <Route path="/faq" element={<FAQ />} />
-                <Route path="/agendarcita" element={<RutaProtegida rolPermitido="ALUMNO"><AgendarCita /></RutaProtegida>}/>
-                <Route path="/alumno/citas" element={<RutaProtegida rolPermitido="ALUMNO"><CitasAlumno /></RutaProtegida>}/>
+                <Route path="/coordinaciones" element={<CoordinacionesCIADE />} />
+                <Route path="/agendarcita" element={<RutaProtegida rolPermitido="Alumno"><AgendarCita /></RutaProtegida>}/>
+                <Route path="/alumno/citas" element={<RutaProtegida rolPermitido="Alumno"><CitasAlumno /></RutaProtegida>}/>
                 <Route path="/acceso-usuario" element={<AccesoUsuario />} />
                 <Route path="/registro" element={<BloquearSiAutenticado><RegistroUsuario /></BloquearSiAutenticado>} />
                 <Route path="/login" element={<BloquearSiAutenticado><Login /></BloquearSiAutenticado>} />
-                <Route path="/panel-coordinacion"element={<RutaProtegida rolPermitido="COORDINACION"><PanelCoordinacion /></RutaProtegida>}/>
-                <Route path="/panel-admin" element={<RutaProtegida rolPermitido="ADMIN"><PanelAdmin /></RutaProtegida >}/>
+                <Route path="/panel-coordinacion"element={<RutaProtegida rolPermitido="Coordinacion"><PanelCoordinacion /></RutaProtegida>}/>
+                <Route path="/panel-admin" element={<RutaProtegida rolPermitido="Admin"><PanelAdmin /></RutaProtegida >}/>
               </Routes>
             </main>
             <Footer />
