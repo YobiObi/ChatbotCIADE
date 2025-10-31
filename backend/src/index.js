@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import dialogflowService from "./dialogflowService.js";
 
 import authRoutes from './routes/auth.routes.js';
 import citaRoutes from "./routes/cita.routes.js";
@@ -44,6 +45,16 @@ app.use("/api", institucionalRoutes);
 app.post("/api/webhook", (req, res) => {
   console.log("Petición de Dialogflow:", req.body);
   res.json({ fulfillmentText: "Conexión exitosa con el backend Render ✅" });
+});
+
+app.get("/api/test-dialogflow", async (req, res) => {
+  try {
+    const reply = await dialogflowService.detectIntent("Hola", "test-session");
+    res.json({ respuesta: reply });
+  } catch (err) {
+    console.error("❌ Error al probar Dialogflow:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 const PORT = process.env.PORT || 4000;

@@ -296,8 +296,13 @@ export const reagendarCita = async ({
         motivoReagendo,
       });
 
-      await enviarSiHabilitado({ to: alumno.email, subject, html });
-      console.log(`📧 Correo de reagendo enviado a ${alumno.email}`);
+      try {
+        await enviarSiHabilitado({ to: alumno.email, subject, html });
+        console.log(`📧 Correo de reagendo enviado a ${alumno.email}`);
+      } catch (err) {
+        console.warn("[email] Error al enviar:", err.message);
+      }
+
     } catch (e) {
       console.warn("[email] reagendarCita fallo:", e.message);
     }

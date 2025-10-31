@@ -1,26 +1,27 @@
-// backend/dialogflowService.js
-import { SessionsClient } from 'dialogflow';
-import { join } from 'path';
+import { SessionsClient } from "dialogflow";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const sessionClient = new SessionsClient({
-  keyFilename: join(__dirname, 'dialogflow-key.json'),
+  keyFilename: join(__dirname, "dialogflow-key.json"),
 });
 
-const projectId = 'chatbotciade';
+const projectId = process.env.PROJECT_ID;
 
-async function detectIntent(text, sessionId) {
+export async function detectIntent(text, sessionId) {
   const sessionPath = sessionClient.sessionPath(projectId, sessionId);
   const request = {
     session: sessionPath,
     queryInput: {
-      text: {
-        text,
-        languageCode: 'es',
-      },
+      text: { text, languageCode: "es" },
     },
   };
-  const responses = await sessionClient.detectIntent(request);
-  return responses[0].queryResult.fulfillmentText;
-}
 
-export default { detectIntent };
+  const [response] = await sessionClient.detectIntent(request);
+  return response.queryResult.fulfillmentText;
+}
