@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import dialogflowService from "./dialogflowService.js";
+import dialogflowService from "../dialogflowService.js";
 
 import authRoutes from './routes/auth.routes.js';
 import citaRoutes from "./routes/cita.routes.js";
