@@ -96,18 +96,12 @@ export const obtenerCarreras = async (req, res) => {
  */
 export const obtenerFacultades = async (req, res) => {
   try {
-    const facultades = await prisma.carrera.findMany({
-      distinct: ["facultad"],
-      select: { facultad: true },
-      where: { facultad: { not: null } }
+    const facultades = await prisma.facultad.findMany({
+      select: { id: true, nombre: true },
+      orderBy: { nombre: "asc" }
     });
 
-    const lista = facultades
-      .map(f => f.facultad)
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b));
-
-    return res.json(lista);
+    return res.json(facultades);
   } catch (error) {
     console.error("Error al obtener facultades:", error);
     return res.status(500).json({ error: "Error interno al obtener facultades" });
