@@ -9,9 +9,15 @@ export default function HeaderPrivado() {
   const navigate = useNavigate();
 
   const cerrarSesion = async () => {
-    await signOut(auth);
-    navigate("/login");
-  };
+      sessionStorage.setItem("skipLoginAlertOnce", "1");
+      try {
+        await signOut(auth);
+      } finally {
+        // ➜ Bandera para que RutaProtegida NO muestre el alert al llegar al login post-logout
+        // Navega al login y reemplaza el historial para evitar volver atrás a la ruta protegida
+        navigate("/login", { replace: true });
+      }
+    };
 
   console.log("Renderizando Header:", { cargando, user });
 

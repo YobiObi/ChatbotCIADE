@@ -10,18 +10,50 @@ export default function LoginUsuario() {
   });
 
   const [errorCorreo, setErrorCorreo] = useState("");
+  const [errorLogin, setErrorLogin] = useState("");
+  const [infoLogin, setInfoLogin] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [mostrarPass, setMostrarPass] = useState(false);
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const getFriendlyLoginMessage = (error) => {
+    const code = error?.code || "";
+
+    if (code === "auth/invalid-credential" || code === "auth/wrong-password") {
+      return "Correo o contraseña incorrectos.";
+    }
+    if (code === "auth/user-not-found") {
+      return "No existe una cuenta con ese correo institucional.";
+    }
+    if (code === "auth/invalid-email") {
+      return "El correo ingresado no es válido. Revisa el formato nombre.apellido@ksan.edu.";
+    }
+    if (code === "auth/too-many-requests") {
+      return "Demasiados intentos fallidos. Intenta nuevamente en unos minutos o restablece tu contraseña.";
+    }
+    if (code === "auth/user-disabled") {
+      return "Tu cuenta se encuentra deshabilitada. Contacta a soporte institucional.";
+    }
+    if (code === "auth/network-request-failed") {
+      return "No se pudo conectar. Revisa tu conexión a internet e inténtalo nuevamente.";
+    }
+    return error?.message || "No pudimos iniciar sesión. Inténtalo nuevamente.";
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const nextValue = name === "correo" ? value.trim() : value;
+    setFormData({ ...formData, [name]: nextValue });
 
     if (name === "correo") {
+      // 👇 tu formato institucional
       const regex = /^[a-z]+\.[a-z]+@ksan\.edu$/i;
       setErrorCorreo(
-        regex.test(value) ? "" : "Formato inválido: nombre.apellido@ksan.edu"
+        regex.test(nextValue)
+          ? ""
+          : "Formato inválido: nombre.apellido@ksan.edu"
       );
     }
   };
@@ -29,20 +61,25 @@ export default function LoginUsuario() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (errorCorreo || !formData.correo || !formData.contraseña) {
-      alert("Completa todos los campos correctamente");
+      setErrorLogin("Completa todos los campos correctamente.");
       return;
     }
 
+    setErrorLogin("");
+    setInfoLogin("");
     setCargando(true);
 
     try {
       const userCredential = await login(formData.correo, formData.contraseña);
       const token = await userCredential.user.getIdToken();
 
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/me`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/me`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       const data = await res.json();
 
@@ -53,14 +90,28 @@ export default function LoginUsuario() {
         else if (rol === "Alumno") navigate("/agendarcita");
         else navigate("/");
       } else {
-        alert("No se pudo obtener el rol del usuario");
+        setErrorLogin(
+          "No se pudo obtener tu perfil institucional. Intenta nuevamente."
+        );
       }
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
-      alert(error.message || "Credenciales inválidas o usuario no registrado");
+      if (error?.code?.startsWith?.("auth/")) {
+        setErrorLogin(getFriendlyLoginMessage(error));
+      } else {
+        setErrorLogin(
+          "No pudimos iniciar sesión en este momento. Intenta nuevamente."
+        );
+      }
+      setFormData((prev) => ({ ...prev, contraseña: "" }));
     } finally {
       setCargando(false);
     }
+  };
+
+  // 👇 ahora solo redirige a la página de reset
+  const handleGoToReset = () => {
+    navigate("/restablecer");
   };
 
   return (
@@ -72,7 +123,11 @@ export default function LoginUsuario() {
           className="shadow p-4 rounded bg-light fw-semibold"
           style={{ color: "#003366" }}
         >
-          <h2 className="mb-4 text-center">Inicio de Sesión</h2>
+          <h2 className="mb-3 text-center">Inicio de Sesión</h2>
+
+          {/* Mensajes globales */}
+          {errorLogin && <div className="alert alert-danger">{errorLogin}</div>}
+          {infoLogin && <div className="alert alert-success">{infoLogin}</div>}
 
           {/* Correo */}
           <div className="mb-3">
@@ -91,22 +146,53 @@ export default function LoginUsuario() {
             )}
           </div>
 
-          {/* Contraseña */}
-          <div className="mb-3">
+          {/* Contraseña con ícono Bootstrap */}
+          <div className="mb-2 position-relative">
             <label className="form-label">Contraseña</label>
-            <input
-              type="password"
-              name="contraseña"
-              className="form-control"
-              value={formData.contraseña}
-              onChange={handleChange}
-              required
-            />
+            <div className="input-group">
+              <input
+                type={mostrarPass ? "text" : "password"}
+                name="contraseña"
+                className="form-control"
+                value={formData.contraseña}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setMostrarPass(!mostrarPass)}
+                tabIndex={-1}
+                title={mostrarPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                <i
+                  className={`bi ${
+                    mostrarPass ? "bi-eye-slash" : "bi-eye"
+                  }`}
+                ></i>
+              </button>
+            </div>
+          </div>
+
+          {/* Link a recuperar */}
+          <div className="mb-3">
+            <button
+              type="button"
+              className="btn btn-link p-0"
+              onClick={handleGoToReset}
+              style={{ color: "#003366" }}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
           </div>
 
           {/* Botón */}
           <div className="text-center">
-            <button type="submit" className="btn-institucional" disabled={cargando}>
+            <button
+              type="submit"
+              className="btn-institucional"
+              disabled={cargando}
+            >
               {cargando ? "Validando..." : "Ingresar"}
             </button>
           </div>

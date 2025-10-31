@@ -2,14 +2,14 @@ import AccordionItem from "../../components/AcordionItem.jsx";
 
 const faqsInclusion = [
   {
-    question: "¿Qué es Coordinaciones Inclusión?",
+    question: "¿Qué es Inclusión?",
     answer:
-      "Es el equipo que apoya a estudiantes que requieren ajustes razonables y acompañamiento para su plena participación en la vida universitaria.",
+      "Es un apoyo a estudiantes que requieren ajustes razonables y acompañamiento para su plena participación en la vida universitaria.",
   },
   {
-    question: "¿Cómo solicito apoyos o ajustes razonables?",
+    question: "¿Cómo solicito el apoyo inclusión?",
     answer:
-      "Agenda una cita con Coordinaciones Inclusión y describe tus necesidades. El equipo evaluará tu plan de apoyo y coordinará con tus docentes.",
+      "Agenda una cita con tu Coordinación CIADE y te derivarán con el equipo Inclusión de tu sede. Describe tus necesidades. El equipo evaluará tu plan de apoyo y coordinará con tus docentes.",
   },
   {
     question: "¿Qué documentos debo presentar?",
@@ -26,17 +26,12 @@ const faqsInclusion = [
     answer:
       "La información se maneja con estricta confidencialidad y se utiliza únicamente para gestionar apoyos educativos.",
   },
-  {
-    question: "¿Puedo pedir intérprete u otros recursos específicos?",
-    answer:
-      "Sí, según evaluación y disponibilidad institucional se pueden gestionar intérpretes, materiales accesibles u otras medidas.",
-  },
 ];
 
 export default function InclusionFAQ() {
   return (
     <section id="faq-inclusion" className="mb-5">
-      <h3 className="mb-3" style={{ color: "#003366" }}>Coordinaciones Inclusión</h3>
+      <h3 className="mb-3" style={{ color: "#003366" }}>Inclusión</h3>
       <div className="accordion">
         {faqsInclusion.map((faq, i) => (
           <AccordionItem

@@ -92,7 +92,7 @@ export default function CitasAlumno() {
         />
 
         <table className="table table-bordered table-hover tabla-citas">
-          <thead className="encabezado-citas">
+          <thead className="encabezado-citas text-center">
             <tr>
               <th style={{ width: "5%" }}>ID</th>
               <th>Coordinador</th>

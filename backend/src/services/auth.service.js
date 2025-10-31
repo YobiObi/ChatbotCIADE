@@ -23,23 +23,54 @@ export const register = async ({ token, firstName, lastName, rut, role, campus, 
   const decoded = await admin.auth().verifyIdToken(token);
   const { uid, email } = decoded;
 
-  const existing = await userRepo.findByUid(uid);
-  if (existing) {
-    const e = new Error("El usuario ya está registrado");
-    e.status = 409;
+ // 🔎 Validaciones de duplicado más claras
+ const byUid = await userRepo.findByUid(uid);
+ if (byUid) {
+   const e = new Error("El usuario ya está registrado");
+   e.status = 409;
+   e.field = "uid";
     throw e;
+ }
+
+ const byEmail = await userRepo.findByEmail(email, { id: true });
+ if (byEmail) {
+   const e = new Error("El correo ya está registrado");
+   e.status = 409;
+   e.field = "email";
+   throw e;
   }
 
-  const user = await userRepo.createUser({
-    uid,
-    email,
-    firstName,
-    lastName,
-    rut,
-    roleId: roleObj.id,
-    campusId: campusObj.id,
-    carreraId: carreraObj.id
-  });
+  const byRut = await userRepo.findByRut(rut, { id: true });
+  if (byRut) {
+   const e = new Error("El RUT ya está registrado");
+   e.status = 409;
+   e.field = "rut";
+   throw e;
+ }
+
+ let user;
+ try {
+   user = await userRepo.createUser({
+     uid,
+     email,
+     firstName,
+     lastName,
+     rut,
+     roleId: roleObj.id,
+     campusId: campusObj.id,
+     carreraId: carreraObj.id
+   });
+  } catch (err) {
+   // 🛡️ Respaldo: por si la condición de carrera ocurre por condición de carrera en paralelo
+   if (err.code === "P2002") { // unique constraint
+     const target = Array.isArray(err.meta?.target) ? err.meta.target[0] : err.meta?.target;
+     const e = new Error(`El ${target === "rut" ? "RUT" : "correo"} ya está registrado`);
+     e.status = 409;
+     e.field = target || "unknown";
+     throw e;
+   }
+   throw err;
+ }
 
   return user;
 };

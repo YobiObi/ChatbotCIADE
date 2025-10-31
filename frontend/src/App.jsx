@@ -17,6 +17,7 @@ import CoordinacionesCIADE from "./pages/CoordinacionesCIADE";
 import AccesoUsuario from "./pages/Usuario/AccesoUsuario"
 import RegistroUsuario from "./pages/Usuario/RegistroUsuario";
 import Login from "./pages/Usuario/LoginUsuario";
+import ResetPassword from "./pages/Usuario/ResetPassword";
 
 import AgendarCita from "./pages/Alumno/AgendarCita";
 import CitasAlumno from "./pages/Alumno/CitasAlumno";
@@ -40,6 +41,7 @@ function App() {
                 <Route path="/acceso-usuario" element={<AccesoUsuario />} />
                 <Route path="/registro" element={<BloquearSiAutenticado><RegistroUsuario /></BloquearSiAutenticado>} />
                 <Route path="/login" element={<BloquearSiAutenticado><Login /></BloquearSiAutenticado>} />
+                <Route path="/restablecer" element={<ResetPassword />} />
                 <Route path="/panel-coordinacion"element={<RutaProtegida rolPermitido="Coordinacion"><PanelCoordinacion /></RutaProtegida>}/>
                 <Route path="/panel-admin" element={<RutaProtegida rolPermitido="Admin"><PanelAdmin /></RutaProtegida >}/>
               </Routes>

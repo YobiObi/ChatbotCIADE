@@ -139,9 +139,10 @@ export default function PanelCoordinacion() {
             <table className="table table-bordered table-hover tabla-citas">
               <thead className="table-light encabezado-citas text-center">
                 <tr>
-                  <th style={{ width: "5%" }}>ID</th>
+                  <th style={{ width: "3%" }}>ID</th>
                   <th style={{ width: "9%" }}>RUT</th>
                   <th>Estudiante</th>
+                  <th style={{ width: "12%" }}>Correo</th>
                   <th>Carrera</th>
                   <th>Facultad</th>
                   <th>Campus</th>
@@ -168,6 +169,28 @@ export default function PanelCoordinacion() {
 
                       <td>{cita.estudiante?.rut}</td>
                       <td>{cita.estudiante?.firstName} {cita.estudiante?.lastName}</td>
+                      <td className="correo-col">
+                        <button
+                          type="button"
+                          className="btn btn-link p-0 text-start w-100"
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "100%",
+                          }}
+                          title={cita.estudiante?.email}
+                          onClick={() =>
+                            abrirModalTexto(
+                              "Correo del estudiante",
+                              cita.estudiante?.email || "—"
+                            )
+                          }
+                        >
+                          {cita.estudiante?.email || "—"}
+                        </button>
+                      </td>
+                      
                       <td>{cita.estudiante?.carrera?.nombre || "—"}</td>
                       <td>{cita.estudiante?.carrera?.facultad?.nombre || "—"}</td>
                       <td>{cita.estudiante?.campus?.nombre || "—"}</td>

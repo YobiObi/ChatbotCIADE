@@ -9,7 +9,7 @@ const router = express.Router();
 router.post('/auth/register', authController.registerUser);
 
 // Protegidos (usar Authorization: Bearer <idToken>)
-router.post('/auth/me', verifyToken, authController.getUsuarioInfo);
+router.get('/auth/me', verifyToken, authController.getUsuarioInfo);
 router.get("/usuario/:id", verifyToken, userController.obtenerUsuario);
 
 export default router;

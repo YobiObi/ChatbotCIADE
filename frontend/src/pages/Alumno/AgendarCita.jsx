@@ -5,7 +5,7 @@ import * as authService from "../../services/auth.service.js";
 
 export default function AgendarCita() {
   const { token, cargando } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     correo: "",
     modalidad: "",
@@ -14,51 +14,58 @@ export default function AgendarCita() {
 
   const [campusUsuario, setCampusUsuario] = useState("");
   const [carreraUsuario, setCarreraUsuario] = useState("");
+
+  // 🔹 Antes: null hacía que se mostrara "No hay coordinadores..." de inmediato
+  // 🔹 Ahora: manejamos estado de carga explícito
   const [coordinadorCIADE, setCoordinadorCIADE] = useState(null);
+  const [cargandoCoordinador, setCargandoCoordinador] = useState(true);
 
   useEffect(() => {
-  if (!token) return;
+    if (!token) return;
 
-  const fetchUsuario = async () => {
-    try {
-      const data = await authService.getUsuarioInfo(token);
-      setFormData((prev) => ({ ...prev, correo: data.email }));
-      setCampusUsuario(data.campus?.nombre || "");
-      setCarreraUsuario(data.carrera?.nombre || "");
-      console.log("Datos del usuario:", data);
-
-    } catch (error) {
-      console.error("Error al conectar con backend:", error);
-    }
-  };
-
-  fetchUsuario();
-}, [token]);
-
-useEffect(() => {
-  if (!token) return;
-
-  const fetchCoordinador = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/coordinador-asignado`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setCoordinadorCIADE(data.coordinador);
-      } else {
-        console.warn("No hay coordinador asignado:", data.error);
-        setCoordinadorCIADE(null);
+    const fetchUsuario = async () => {
+      try {
+        const data = await authService.getUsuarioInfo(token);
+        setFormData((prev) => ({ ...prev, correo: data.email }));
+        setCampusUsuario(data.campus?.nombre || "");
+        setCarreraUsuario(data.carrera?.nombre || "");
+        console.log("Datos del usuario:", data);
+      } catch (error) {
+        console.error("Error al conectar con backend:", error);
       }
-    } catch (error) {
-      console.error("Error al obtener coordinador CIADE:", error);
-      setCoordinadorCIADE(null);
-    }
-  };
+    };
 
-  fetchCoordinador();
-}, [token]);
+    fetchUsuario();
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchCoordinador = async () => {
+      try {
+        setCargandoCoordinador(true); // ⬅️ inicia carga
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/coordinador-asignado`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const data = await res.json();
+        if (res.ok) {
+          setCoordinadorCIADE(data.coordinador || null);
+        } else {
+          console.warn("No hay coordinador asignado:", data.error);
+          setCoordinadorCIADE(null);
+        }
+      } catch (error) {
+        console.error("Error al obtener coordinador CIADE:", error);
+        setCoordinadorCIADE(null);
+      } finally {
+        setCargandoCoordinador(false); // ⬅️ fin de carga
+      }
+    };
+
+    fetchCoordinador();
+  }, [token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,11 +75,14 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token || !coordinadorCIADE) {
+    if (!token || cargandoCoordinador) {
+      alert("Aún estamos cargando la información de coordinación. Intenta en unos segundos.");
+      return;
+    }
+    if (!coordinadorCIADE) {
       alert("No se puede agendar la cita: falta coordinación CIADE.");
       return;
     }
-
     if (!formData.modalidad || !formData.descripcion.trim()) {
       alert("Por favor completa todos los campos antes de enviar.");
       return;
@@ -94,8 +104,10 @@ useEffect(() => {
 
       const data = await res.json();
       if (res.ok) {
-        alert(`Cita solicitada con éxito. La coordinación CIADE (${coordinadorCIADE.firstName} ${coordinadorCIADE.lastName}) se contactará contigo por correo en los próximos días.`);
-        setFormData({ ...formData, modalidad: "", descripcion: "" });
+        alert(
+          `Cita solicitada con éxito. La coordinación CIADE (${coordinadorCIADE.firstName} ${coordinadorCIADE.lastName}) se contactará contigo por correo en los próximos días.`
+        );
+        setFormData((prev) => ({ ...prev, modalidad: "", descripcion: "" }));
       } else {
         console.error("Respuesta del backend:", data);
         alert(data.error || "Error al enviar la solicitud.");
@@ -106,8 +118,9 @@ useEffect(() => {
     }
   };
 
-  if (cargando)
+  if (cargando) {
     return <div className="p-5 text-center">Cargando agendamiento...</div>;
+  }
 
   return (
     <>
@@ -130,17 +143,27 @@ useEffect(() => {
           {/* Coordinador CIADE */}
           <div className="mb-3">
             <label className="form-label">Coordinación CIADE</label>
-            {coordinadorCIADE && (
-              <div className="alert alert-info mt-2">
-                Coordinador asignado: <strong>{coordinadorCIADE.firstName} {coordinadorCIADE.lastName}</strong><br />
-              </div>
-            )}
 
-            {!coordinadorCIADE && campusUsuario && carreraUsuario && (
-              <div className="alert alert-warning mt-2">
-                No hay coordinadores asignados para la carrera <strong>{carreraUsuario}</strong> en el campus <strong>{campusUsuario}</strong>.
+            {/* ⬇️ Render en 3 estados */}
+            {cargandoCoordinador ? (
+              <div className="alert alert-secondary mt-2">
+                Cargando información...
               </div>
-            )}
+            ) : coordinadorCIADE ? (
+              <div className="alert alert-info mt-2">
+                Coordinador asignado:{" "}
+                <strong>
+                  {coordinadorCIADE.firstName} {coordinadorCIADE.lastName}
+                </strong>
+                <br />
+              </div>
+            ) : campusUsuario && carreraUsuario ? (
+              <div className="alert alert-warning mt-2">
+                No hay coordinadores asignados para la carrera{" "}
+                <strong>{carreraUsuario}</strong> en el campus{" "}
+                <strong>{campusUsuario}</strong>.
+              </div>
+            ) : null}
           </div>
 
           {/* Modalidad */}
@@ -152,6 +175,7 @@ useEffect(() => {
               value={formData.modalidad}
               onChange={handleChange}
               required
+              disabled={cargandoCoordinador} // evita seleccionar mientras carga
             >
               <option value="">Selecciona modalidad</option>
               <option value="presencial">Presencial</option>
@@ -170,12 +194,19 @@ useEffect(() => {
               onChange={handleChange}
               maxLength={500}
               required
+              disabled={cargandoCoordinador} // opcional
             />
             <small className="text-muted">{formData.descripcion.length}/500</small>
           </div>
 
           <div className="text-center">
-            <button type="submit" className="btn-institucional">Solicitar Cita</button>
+            <button
+              type="submit"
+              className="btn-institucional"
+              disabled={cargandoCoordinador} // ⬅️ no deja enviar hasta tener respuesta
+            >
+              {cargandoCoordinador ? "Cargando..." : "Solicitar Cita"}
+            </button>
           </div>
         </form>
       </div>

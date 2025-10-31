@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function RegistroUsuario() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -21,22 +22,43 @@ export default function RegistroUsuario() {
   const [errorCorreo, setErrorCorreo] = useState("");
   const [errorRUT, setErrorRUT] = useState("");
   const [campusList, setCampusList] = useState([]);
+  const [cargandoCampus, setCargandoCampus] = useState(false);
   const [carreraList, setCarreraList] = useState([]);
+  const [mostrarPass, setMostrarPass] = useState(false);
 
   const sedes = ["Santiago", "Viña del Mar", "Concepción"];
 
   useEffect(() => {
-  if (formData.sede) {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/institucional/campus?sede=${formData.sede}`)
-      .then(res => res.json())
-      .then(data => {
-        setCampusList(data);
-        setFormData(prev => ({ ...prev, campus: "", carrera: "" })); // limpia selección previa
-      })
-      .catch(err => console.error("Error al obtener campus:", err));
-  }
-}, [formData.sede]);
-
+    if (!formData.sede) {
+      setCampusList([]);
+      return;
+    }
+    let cancelado = false;
+    const cargar = async () => {
+      try {
+        setCargandoCampus(true);
+        setCampusList([]); // evita mostrar datos viejos mientras cambia la sede
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/institucional/campus?sede=${formData.sede}`
+        );
+        const data = await res.json();
+        if (!cancelado) {
+          setCampusList(Array.isArray(data) ? data : []);
+          // limpia selección previa sólo cuando llega la nueva lista
+          setFormData(prev => ({ ...prev, campus: "", carrera: "" }));
+        }
+      } catch (err) {
+        if (!cancelado) {
+          console.error("Error al obtener campus:", err);
+          setCampusList([]);
+        }
+      } finally {
+        if (!cancelado) setCargandoCampus(false);
+      }
+    };
+    cargar();
+    return () => { cancelado = true; };
+  }, [formData.sede]);
 
   useEffect(() => {
   if (formData.campus) {
@@ -72,7 +94,7 @@ export default function RegistroUsuario() {
     setFormData({ ...formData, [name]: value });
 
     if (name === "correo") {
-      const regex = /^[a-z]+\.[a-z]+@ksan\.edu$/i;
+      const regex = /^[a-z]+\.[a-z]+@gmail\.com$/i;
       setErrorCorreo(regex.test(value) ? "" : "Formato inválido: nombre.apellido@ksan.edu");
     }
 
@@ -88,6 +110,7 @@ export default function RegistroUsuario() {
     e.preventDefault();
     if (errorCorreo || errorRUT) return;
 
+    setIsRegistering(true);
     try {
       await register({
         correo: formData.correo,
@@ -106,7 +129,26 @@ export default function RegistroUsuario() {
       navigate("/login");
     } catch (error) {
       console.error("Error al registrar usuario:", error);
-      alert("Error al crear cuenta: " + error.message);
+      // Mapeo de errores comunes de Firebase Auth
+      const code = error?.code || "";
+      if (code === "auth/email-already-in-use") {
+        alert("El correo ingresado ya está en uso. Por favor intenta con otro correo institucional.");
+        return;
+      }
+      if (code === "auth/invalid-email") {
+        alert("El correo ingresado no es válido. Revisa el formato nombre.apellido@ksan.edu.");
+        return;
+      }
+      if (code === "auth/weak-password") {
+        alert("La contraseña es demasiado débil. Usa al menos 6 caracteres.");
+        return;
+      }
+      // Si no es un error de Firebase Auth o no trae code,
+      // muestra el mensaje del backend si viene estructurado
+      const backendMsg = error?.response?.data?.error || error?.message;
+      alert("No se pudo crear la cuenta: " + (backendMsg || "Inténtalo nuevamente."));
+    } finally {
+      setIsRegistering(false); // ← termina carga, sea éxito o error
     }
   };
 
@@ -191,7 +233,10 @@ export default function RegistroUsuario() {
                 <option key={campus.id} value={campus.nombre}>{campus.nombre}</option>
               ))}
             </select>
-            {formData.sede && campusList.length === 0 && (
+            {formData.sede && cargandoCampus && (
+              <p className="text-secondary mt-2">Cargando campus...</p>
+            )}
+            {formData.sede && !cargandoCampus && campusList.length === 0 && (
               <p className="text-danger mt-2">No hay campus disponibles para esta sede.</p>
             )}
           </div>
@@ -242,22 +287,41 @@ export default function RegistroUsuario() {
             {errorCorreo && <div className="invalid-feedback">{errorCorreo}</div>}
           </div>
 
-          {/* Contraseña */}
-          <div className="mb-3">
+          {/* Contraseña con ícono Bootstrap */}
+          <div className="mb-3 position-relative">
             <label className="form-label">Contraseña</label>
-            <input
-              type="password"
-              name="contraseña"
-              className="form-control"
-              value={formData.contraseña}
-              onChange={handleChange}
-              required
-            />
+            <div className="input-group">
+              <input
+                type={mostrarPass ? "text" : "password"}
+                name="contraseña"
+                className="form-control"
+                value={formData.contraseña}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setMostrarPass(!mostrarPass)}
+                tabIndex={-1}
+                title={mostrarPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-label={mostrarPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                <i className={`bi ${mostrarPass ? "bi-eye-slash" : "bi-eye"}`} />
+              </button>
+            </div>
           </div>
 
           {/* Botón */}
           <div className="text-center">
-            <button type="submit" className="btn-institucional">Registrarse</button>
+            <button
+              type="submit"
+              className="btn-institucional"
+              disabled={isRegistering}
+            >
+              {isRegistering ? "Registrando..." : "Registrarse"}
+            </button>
           </div>
 
           <div className="mt-3 text-center">

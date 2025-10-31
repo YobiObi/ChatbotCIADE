@@ -18,6 +18,12 @@ export const findByEmail = (email, select) =>
     ...(select && { select }),
   });
 
+export const findByRut = (rut, select) =>
+  prisma.user.findUnique({
+    where: { rut },
+    ...(select && { select }),
+  });
+
 export const createUser = (data) =>
   prisma.user.create({ data });
 

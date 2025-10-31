@@ -117,89 +117,93 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 🔑 Registro institucional (con sincronización robusta)
-  const register = async ({
-    correo,
-    contraseña,
-    firstName,
-    lastName,
-    rut,
-    sede,
-    campus,
-    carrera,
-    facultad,
-    role,
-  }) => {
-    isRegisteringRef.current = true;
-    try {
-      // 1) Crear cuenta en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, correo, contraseña);
-      const firebaseUser = userCredential.user;
+// 🔑 Registro institucional (con sincronización robusta)
+const register = async ({
+  correo,
+  contraseña,
+  firstName,
+  lastName,
+  rut,
+  sede,
+  campus,
+  carrera,
+  facultad,
+  role,
+}) => {
+  isRegisteringRef.current = true;
+  let firebaseUser = null;
+  let backendOK = false;
 
-      // 2) Asegurar token fresco
-      let token = await firebaseUser.getIdToken(true);
+  try {
+    // 1) Crear cuenta en Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, correo, contraseña);
+    firebaseUser = userCredential.user;
 
-      // 3) Registrar en el backend (Prisma) con los datos institucionales
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          uid: firebaseUser.uid, // no es estrictamente necesario si backend lo saca del token
-          email: correo,
-          firstName,
-          lastName,
-          rut,
-          role,
-          sede,
-          campus,
-          carrera,
-          facultad,
-        }),
-      });
+    // 2) Token fresco
+    let token = await firebaseUser.getIdToken(true);
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Error al registrar usuario en backend");
+    // 3) Registrar en backend (si esto falla, SÍ eliminamos cuenta Firebase)
+    await authService.register(
+      { firstName, lastName, rut, role, sede, campus, carrera, facultad },
+      token
+    );
+    backendOK = true;
+
+    // 4) Sincronización con /auth/me (retry)
+    const MAX_INTENTOS = 10;     // subimos a 10 intentos
+    const WAIT_MS = 600;         // y 600ms entre intentos (~6s)
+    let usuarioSincronizado = null;
+
+    for (let i = 0; i < MAX_INTENTOS && !usuarioSincronizado; i++) {
+      await new Promise((r) => setTimeout(r, WAIT_MS));
+      try {
+        token = await firebaseUser.getIdToken(true);
+        usuarioSincronizado = await authService.getUsuarioInfo(token);
+      } catch (err) {
+        // 404/“no registrado” → seguir intentando
+        if (!isNotRegisteredError(err)) throw err; // otros errores → abortar
       }
-
-      // 4) Sincronización con /auth/me (retry mientras el registro “aparece”)
-      const MAX_INTENTOS = 5;
-      const WAIT_MS = 500;
-      let usuarioSincronizado = null;
-
-      for (let i = 0; i < MAX_INTENTOS && !usuarioSincronizado; i++) {
-        await new Promise((r) => setTimeout(r, WAIT_MS));
-        try {
-          token = await firebaseUser.getIdToken(true);
-          usuarioSincronizado = await authService.getUsuarioInfo(token);
-        } catch (err) {
-          if (!isNotRegisteredError(err)) throw err; // error real → abortar
-        }
-      }
-
-      if (!usuarioSincronizado) {
-        throw new Error("No se pudo sincronizar el usuario con la base de datos.");
-      }
-
-      // 5) Opcional: setear el user aquí para evitar salto de pantalla
-      setUser({
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        token,
-        ...usuarioSincronizado,
-      });
-
-      return usuarioSincronizado;
-    } catch (err) {
-      console.error("Error en register:", err);
-      throw err;
-    } finally {
-      isRegisteringRef.current = false;
     }
-  };
+
+    if (!usuarioSincronizado) {
+      // No eliminar Firebase si solo falló la sincronización
+      // (el usuario quedó bien creado en backend)
+      throw new Error("No se pudo sincronizar el usuario con la base de datos.");
+    }
+
+    // 5) Setear user para evitar salto visual
+    setUser({
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      token,
+      ...usuarioSincronizado,
+    });
+
+    return usuarioSincronizado;
+  } catch (err) {
+    console.error("Error en register:", err);
+
+    // 🔴 Solo borrar la cuenta Firebase si el backend NO alcanzó a registrar
+    if (!backendOK) {
+      try {
+        if (auth.currentUser) {
+          const { deleteUser } = await import("firebase/auth");
+          await deleteUser(auth.currentUser);
+        }
+      } catch (delErr) {
+        console.warn("No se pudo eliminar el usuario Firebase recién creado:", delErr);
+      }
+    }
+
+    // Limpieza de estado local
+    setUser(null);
+
+    // Propaga el error al componente
+    throw err;
+  } finally {
+    isRegisteringRef.current = false;
+  }
+};
 
   return (
     <AuthContext.Provider

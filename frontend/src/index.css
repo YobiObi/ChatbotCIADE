@@ -134,6 +134,23 @@
   text-overflow: ellipsis;
 }
 
+/* columna de correo */
+.tabla-citas td.correo-col {
+  vertical-align: middle;
+  /* por si el correo tiene palabra muy larga */
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.tabla-citas td.correo-col .btn-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.tabla-citas td.correo-col .btn-link:hover {
+  text-decoration: underline;
+}
+
 /* ============================
    Botones Institucionales CIADE
    ============================ */

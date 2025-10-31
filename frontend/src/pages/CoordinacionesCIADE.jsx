@@ -4,12 +4,14 @@ import Maria from "../images/Rostros/MaPi.jpg"
 import Natalia from "../images/Rostros/NaVa.png"
 import Rosse from "../images/Rostros/RoEs.png"
 import Marcela from "../images/Rostros/MaHo.png"
+import Caterin from "../images/Rostros/CaCo.png"
 import MariaFer from "../images/Rostros/FeSa.png"
 import Carmen from "../images/Rostros/CaDo.png"
 import Felipe from "../images/Rostros/FeCa.jpg"
 import Laura from "../images/Rostros/LaSa.png"
 import Alejandra from "../images/Rostros/AlAl.png"
 import Ignacia from "../images/Rostros/IgSa.jpg"
+import Nicol from "../images/Rostros/NiMi.png";
 
 const DATA_CAMPUS = [
   {
@@ -58,7 +60,7 @@ const DATA_CAMPUS = [
       {
         nombre: "Caterin Colpihueque Hidalgo",
         email: "caterin.colpihueque@unab.cl",
-        foto: "https://i.pravatar.cc/96?img=67",
+        foto: Caterin,
       },
     ],
   },
@@ -96,22 +98,22 @@ const DATA_CAMPUS = [
 
 const DATA_INCLUSION = [
   {
-    nombre: "María Fernanda Santander",
+    nombre: "María Fernanda Santander Hernandez",
     cargo: "Concepción",
     email: "maria.santander@unab.cl",
     foto: MariaFer,
   },
   {
-    nombre: "Ignacia Sauvalle",
+    nombre: "Maria Ignacia Sauvalle Ricart",
     cargo: "Santiago",
-    email: "i.sauvalle@unab.cl",
+    email: "maria.sauvalle@unab.cl",
     foto: Ignacia,
   },
   {
-    nombre: "Nombre 3",
+    nombre: "Nicol Miranda Chávez",
     cargo: "Viña del Mar",
-    email: "persona3@unab.cl",
-    foto: "https://i.pravatar.cc/96?img=67",
+    email: "nicol.miranda@unab.cl",
+    foto: Nicol,
   },
 ];
 
