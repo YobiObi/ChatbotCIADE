@@ -1,12 +1,12 @@
 // backend/dialogflowService.js
-const dialogflow = require('dialogflow');
-const path = require('path');
+import { SessionsClient } from 'dialogflow';
+import { join } from 'path';
 
-const sessionClient = new dialogflow.SessionsClient({
-  keyFilename: path.join(__dirname, 'dialogflow-key.json'),
+const sessionClient = new SessionsClient({
+  keyFilename: join(__dirname, 'dialogflow-key.json'),
 });
 
-const projectId = 'tu-proyecto-id';
+const projectId = 'chatbotciade';
 
 async function detectIntent(text, sessionId) {
   const sessionPath = sessionClient.sessionPath(projectId, sessionId);
@@ -23,4 +23,4 @@ async function detectIntent(text, sessionId) {
   return responses[0].queryResult.fulfillmentText;
 }
 
-module.exports = { detectIntent };
+export default { detectIntent };

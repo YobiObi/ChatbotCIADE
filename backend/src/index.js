@@ -23,6 +23,11 @@ app.use("/api", institucionalRoutes);
 
 // más rutas: app.use('/api/citas', citasRoutes) — las iremos separando igual
 
+app.post("/api/webhook", (req, res) => {
+  console.log("Petición de Dialogflow:", req.body);
+  res.json({ fulfillmentText: "Conexión exitosa con el backend Render ✅" });
+});
+
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
   console.log(`Servidor backend escuchando en puerto ${PORT}`);
