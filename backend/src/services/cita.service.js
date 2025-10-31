@@ -262,6 +262,7 @@ export const reagendarCita = async ({
     throw error;
   }
 
+  // ✅ Transacción: solo operaciones de BD
   const citaActualizada = await prisma.$transaction(async (tx) => {
     const dataUpdate = {
       fecha: nuevaFecha,
@@ -270,17 +271,23 @@ export const reagendarCita = async ({
     if (nuevaModalidad) dataUpdate.modalidad = nuevaModalidad;
     if (motivoReagendo) dataUpdate.observacion = motivoReagendo;
 
-    const updated = await tx.cita.update({
+    return tx.cita.update({
       where: { id: cita.id },
       data: dataUpdate,
     });
+  });
 
-    // Envío de correo de reagendo
+  // ✅ Envío de correo fuera de la transacción (no bloquea ni causa timeout)
+  (async () => {
     try {
       const alumno = await userRepo.findById(cita.estudianteId);
       const { subject, html } = tplCitaReagendada({
         alumno,
-        cita: { ...cita, fecha: nuevaFecha, modalidad: nuevaModalidad || cita.modalidad },
+        cita: {
+          ...cita,
+          fecha: nuevaFecha,
+          modalidad: nuevaModalidad || cita.modalidad,
+        },
         fechaAnteriorISO: cita.fecha?.toISOString?.() || cita.fecha,
         nuevaFechaISO: nuevaFecha.toISOString(),
         nuevaModalidad,
@@ -288,13 +295,13 @@ export const reagendarCita = async ({
         nuevaUrl,
         motivoReagendo,
       });
-      await enviarSiHabilitado({ to: alumno.email, subject, html });
-    } catch (e) {
-      console.error("[email] reagendarCita fallo:", e);
-    }
 
-    return updated;
-  });
+      await enviarSiHabilitado({ to: alumno.email, subject, html });
+      console.log(`📧 Correo de reagendo enviado a ${alumno.email}`);
+    } catch (e) {
+      console.warn("[email] reagendarCita fallo:", e.message);
+    }
+  })();
 
   return citaActualizada;
 };
