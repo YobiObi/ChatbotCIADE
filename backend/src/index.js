@@ -12,7 +12,25 @@ import prisma from './config/prisma.js';
 dotenv.config();
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  "https://chatbot-ciade.vercel.app", // tu frontend en producción
+  "http://localhost:5173" // opcional, para pruebas locales
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // permitir peticiones sin origin (como Postman) o desde los orígenes definidos
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS bloqueado para este origen: " + origin));
+      }
+    },
+    credentials: true, // permite cabeceras como Authorization
+  })
+);
+
 app.use(express.json());
 
 // montar rutas
