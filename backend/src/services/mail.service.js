@@ -1,16 +1,15 @@
 // backend/src/services/mail.service.js
 import nodemailer from "nodemailer";
 
-/**
- * En Render el SMTP suele dar ETIMEDOUT.
- * Con Brevo podemos usar la API HTTP v3 y así evitar puertos bloqueados.
- * Si hay BREVO_API_KEY -> usamos API
- * Si no -> caemos a SMTP (para local).
- */
-
 async function sendWithBrevoAPI({ to, subject, html, text, from }) {
   const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn("[mail] No hay BREVO_API_KEY definida");
+    return null;
+  }
+
+  // log solo para debug
+  console.log("[mail] usando Brevo API key (inicio):", apiKey.slice(0, 8), "...");
 
   const payload = {
     sender: {
@@ -32,13 +31,15 @@ async function sendWithBrevoAPI({ to, subject, html, text, from }) {
     body: JSON.stringify(payload),
   });
 
+  const body = await res.text();
+
   if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(`Brevo API error ${res.status}: ${errBody}`);
+    console.error("[mail] Brevo API respondió error:", res.status, body);
+    throw new Error(`Brevo API error ${res.status}: ${body}`);
   }
 
-  const data = await res.json();
-  console.log("[mail] (Brevo API) enviado:", data);
+  const data = JSON.parse(body);
+  console.log("[mail] (Brevo API) enviado OK:", data);
   return data;
 }
 
@@ -59,44 +60,22 @@ function getTransporter() {
   return transporter;
 }
 
-export async function sendMail({
-  to,
-  subject,
-  html,
-  text,
-  cc,
-  bcc,
-  replyTo,
-  alternatives = [],
-  attachments = [],
-}) {
+export async function sendMail({ to, subject, html, text }) {
   const from = process.env.MAIL_FROM || "CIADE <no-reply@ciade.local>";
 
-  // 1) intentar con Brevo API (HTTPS)
+  // 1) intentar por Brevo API (HTTPS)
   try {
     if (process.env.BREVO_API_KEY) {
       const data = await sendWithBrevoAPI({ to, subject, html, text, from });
-      return { messageId: data?.messageId || data?.message || "brevo-api" };
+      return { messageId: data?.messageId || "brevo-api" };
     }
   } catch (e) {
-    console.error("[mail] Brevo API falló, intento SMTP:", e.message);
-    // seguimos al fallback
+    console.error("[mail] Brevo API falló, probando SMTP...", e.message);
   }
 
-  // 2) fallback a SMTP (para local)
+  // 2) fallback SMTP (local)
   const tx = getTransporter();
-  const info = await tx.sendMail({
-    from,
-    to,
-    subject,
-    html,
-    text,
-    cc,
-    bcc,
-    replyTo,
-    alternatives,
-    attachments,
-  });
+  const info = await tx.sendMail({ from, to, subject, html, text });
   console.log(`[mail] (SMTP) enviado a ${to}: ${subject} (${info.messageId})`);
   return info;
 }
