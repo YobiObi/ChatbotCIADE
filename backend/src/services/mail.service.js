@@ -2,38 +2,19 @@
 import nodemailer from "nodemailer";
 import { Resend } from "resend";
 
-/**
- * En producción (Render) estamos usando Resend porque SMTP suele dar ETIMEDOUT.
- * Si existe RESEND_API_KEY -> usamos Resend
- * Si NO existe -> caemos a Nodemailer como antes
- */
-
-// cache simple de Resend (para no recrearlo)
+// cache
 let resendClient = null;
 
-/**
- * Obtiene una instancia de Resend si hay API key
- */
 function getResend() {
   const { RESEND_API_KEY } = process.env;
   if (!RESEND_API_KEY) return null;
-
-  // import dinámico para no romper si no está instalado
   if (!resendClient) {
-    // eslint-disable-next-line global-require
     resendClient = new Resend(RESEND_API_KEY);
   }
   return resendClient;
 }
 
-/**
- * Transporter global único (solo si usamos SMTP)
- */
 let transporter;
-
-/**
- * Retorna un transporter configurado a partir de variables .env
- */
 function getTransporter() {
   if (!transporter) {
     const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
@@ -45,21 +26,16 @@ function getTransporter() {
     transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: Number(SMTP_PORT || 587),
-      secure: Number(SMTP_PORT) === 465, // true solo para 465 (SSL)
+      secure: Number(SMTP_PORT) === 465,
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
     });
   }
-
   return transporter;
 }
 
-/**
- * Envía un correo HTML simple.
- * Firma compatible con el resto del proyecto.
- */
 export async function sendMail({
   to,
   subject,
@@ -71,35 +47,33 @@ export async function sendMail({
   alternatives = [],
   attachments = [],
 }) {
-  const from = process.env.MAIL_FROM || "CIADE <no-reply@ciade.local>";
+  const from = process.env.MAIL_FROM || "CIADE <onboarding@resend.dev>";
 
-  // 1) Intentar con Resend primero
+  // 1) intentar con Resend
   const resend = getResend();
   if (resend) {
-    // Resend espera un array de destinatarios o string
-    const payload = {
+    const { data, error } = await resend.emails.send({
       from,
       to,
       subject,
       html,
-    };
+      text,
+    });
 
-    // algunos campos no son estándar en Resend, así que los ignoramos o los mapeamos
-    if (text) payload.text = text;
-
-    // Resend no tiene "alternatives" como Nodemailer, así que los omitimos
-    // Adjuntos: Resend los soporta, pero habría que mapearlos.
-    // Para mantenerlo simple, los ignoramos aquí.
-
-    const result = await resend.emails.send(payload);
-    console.log(`[mail] (Resend) Enviado a ${to}: ${subject} (${result?.id || "sin-id"})`);
-    return result;
+    if (error) {
+      console.error("[mail] Resend devolvió error:", error);
+      // dejamos seguir al fallback SMTP por si estás en local
+    } else {
+      console.log(
+        `[mail] (Resend) Enviado a ${to}: ${subject} (${data?.id || "sin-id"})`
+      );
+      return { messageId: data?.id || null };
+    }
   }
 
-  // 2) Si no hay RESEND_API_KEY -> usar SMTP como antes
+  // 2) fallback a SMTP (solo si no hubo Resend o hubo error)
   const tx = getTransporter();
-
-  const mailOptions = {
+  const info = await tx.sendMail({
     from,
     to,
     subject,
@@ -110,10 +84,7 @@ export async function sendMail({
     replyTo,
     alternatives,
     attachments,
-  };
-
-  const info = await tx.sendMail(mailOptions);
-
+  });
   console.log(`[mail] (SMTP) Enviado a ${to}: ${subject} (${info.messageId})`);
   return info;
 }
