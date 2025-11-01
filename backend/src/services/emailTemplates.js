@@ -1,5 +1,6 @@
 // backend/src/services/emailTemplates.js
 // backend/src/services/emailTemplates.js
+import logo from "../../../frontend/src/images/Logo-CIADE.png";
 
 function wrapTemplate(title, contentHtml) {
   return `
@@ -7,7 +8,7 @@ function wrapTemplate(title, contentHtml) {
     <div style="max-width:600px;margin:auto;background:white;border-radius:8px;overflow:hidden;box-shadow:0 3px 8px rgba(0,0,0,0.1);">
       
       <div style="background:#003366;color:white;text-align:center;padding:20px 10px;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/9/9b/Logo_UNAB.png" alt="Logo CIADE" width="80" style="margin-bottom:8px;">
+        <img src={logo} alt="Logo CIADE" width="80" style="margin-bottom:8px;">
         <h2 style="margin:0;font-size:20px;">${title}</h2>
       </div>
 
