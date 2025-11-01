@@ -1,43 +1,53 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 const DialogflowMessenger = () => {
   useEffect(() => {
-    // Evitar carga duplicada
-    if (document.getElementById('chatbot-ciade')) return;
+    // si ya existe, no lo vuelvas a crear
+    if (document.getElementById("chatbot-ciade")) return;
 
-    // Cargar script solo una vez
+    // cargar script solo una vez
     if (!document.querySelector('script[src*="dialogflow-console"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1';
+      const script = document.createElement("script");
+      script.src =
+        "https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1";
       script.async = true;
       document.body.appendChild(script);
     }
 
-    // Crear el widget
-    const dfMessenger = document.createElement('df-messenger');
-    dfMessenger.setAttribute('intent', 'WELCOME');
-    dfMessenger.setAttribute('chat-title', 'Chatbot CIADE');
-    dfMessenger.setAttribute('agent-id', 'a6b5cbca-522c-4c20-9735-7e6eafa62cb0');
-    dfMessenger.setAttribute('language-code', 'es');
-    dfMessenger.setAttribute('id', 'chatbot-ciade');
-    dfMessenger.style.display = 'none';
+    // crear el widget
+    const dfMessenger = document.createElement("df-messenger");
+    dfMessenger.setAttribute("intent", "WELCOME");
+    dfMessenger.setAttribute("chat-title", "Chatbot CIADE");
+    dfMessenger.setAttribute("agent-id", "a6b5cbca-522c-4c20-9735-7e6eafa62cb0");
+    dfMessenger.setAttribute("language-code", "es");
+    dfMessenger.setAttribute("id", "chatbot-ciade");
+    dfMessenger.style.display = "none";
+    dfMessenger.style.zIndex = "999"; // por si queda debajo del icono
     document.body.appendChild(dfMessenger);
 
-    // Cerrar al hacer clic fuera
+    // cerrar al hacer clic fuera, pero NO cuando hago clic en el botón
     const handleClickOutside = (e) => {
-      const bot = document.getElementById('chatbot-ciade');
-      if (bot && bot.style.display === 'block') {
-        const isInside = bot.contains(e.target);
-        if (!isInside) {
-          bot.style.display = 'none';
-        }
+      const bot = document.getElementById("chatbot-ciade");
+      const toggle = document.getElementById("chatbot-toggle");
+
+      if (!bot) return;
+
+      const isBot = bot.contains(e.target);
+      const isToggle = toggle && toggle.contains(e.target);
+
+      // si hice clic en el bot o en el botón -> no cierres
+      if (isBot || isToggle) return;
+
+      // si está abierto y hago clic afuera -> cierra
+      if (bot.style.display === "block") {
+        bot.style.display = "none";
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
 
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, []);
 
