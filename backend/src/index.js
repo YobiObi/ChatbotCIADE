@@ -43,8 +43,9 @@ app.use("/api", institucionalRoutes);
 // más rutas: app.use('/api/citas', citasRoutes) — las iremos separando igual
 
 app.post("/api/webhook", (req, res) => {
-  console.log("Petición de Dialogflow:", req.body);
-  res.json({ fulfillmentText: "Conexión exitosa con el backend Render ✅" });
+  console.log("Webhook desde Dialogflow:", req.body.queryResult?.intent?.displayName);
+  // no hacemos lógica aquí porque la maneja Dialogflow
+  return res.json({}); // respuesta vacía = Dialogflow usa su fulfillment normal
 });
 
 app.get("/api/test-dialogflow", async (req, res) => {
