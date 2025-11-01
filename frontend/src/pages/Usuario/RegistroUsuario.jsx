@@ -94,7 +94,7 @@ export default function RegistroUsuario() {
     setFormData({ ...formData, [name]: value });
 
     if (name === "correo") {
-      const regex = /^[a-z]+\.[a-z]+@gmail\.com$/i;
+      const regex = /^[a-z]+\.[a-z]+@ksan\.edu$/i;
       setErrorCorreo(regex.test(value) ? "" : "Formato inválido: nombre.apellido@ksan.edu");
     }
 
