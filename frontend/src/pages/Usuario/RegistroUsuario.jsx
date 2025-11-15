@@ -288,7 +288,6 @@ export default function RegistroUsuario() {
             <input
               type="email"
               name="correo"
-              placeholder="nombre.apellido@uandresbello.edu / nombre.apellido@unab.cl"
               className={`form-control ${errorCorreo ? "is-invalid" : ""}`}
               value={formData.correo}
               onChange={handleChange}
