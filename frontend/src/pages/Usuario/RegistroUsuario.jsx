@@ -94,8 +94,8 @@ export default function RegistroUsuario() {
     setFormData({ ...formData, [name]: value });
 
     if (name === "correo") {
-      const regex = /^[a-z]+\.[a-z]+@ksan\.edu$/i;
-      setErrorCorreo(regex.test(value) ? "" : "Formato inválido: nombre.apellido@ksan.edu");
+      const regex = /^[a-z]+\.[a-z]+@uandresbello\.edu$/i;
+      setErrorCorreo(regex.test(value) ? "" : "Formato inválido: nombre.apellido@uandresbello.edu");
     }
 
     if (name === "rut") {
@@ -136,7 +136,7 @@ export default function RegistroUsuario() {
         return;
       }
       if (code === "auth/invalid-email") {
-        alert("El correo ingresado no es válido. Revisa el formato nombre.apellido@ksan.edu.");
+        alert("El correo ingresado no es válido. Revisa el formato nombre.apellido@uandresbello.edu.");
         return;
       }
       if (code === "auth/weak-password") {
@@ -278,7 +278,7 @@ export default function RegistroUsuario() {
             <input
               type="email"
               name="correo"
-              placeholder="nombre.apellido@ksan.edu"
+              placeholder="nombre.apellido@uandresbello.edu"
               className={`form-control ${errorCorreo ? "is-invalid" : ""}`}
               value={formData.correo}
               onChange={handleChange}

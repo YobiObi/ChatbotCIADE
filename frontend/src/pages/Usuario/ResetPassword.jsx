@@ -97,7 +97,7 @@ export default function ResetPassword() {
                   className="form-control"
                   value={email}
                   onChange={(e) => setEmail(e.target.value.trim())}
-                  placeholder="nombre.apellido@ksan.edu"
+                  placeholder="nombre.apellido@uandresbello.edu"
                   required
                 />
               </div>

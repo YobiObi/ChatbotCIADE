@@ -250,7 +250,7 @@ export default function ModalCrearUsuario({ visible, onClose, onUsuarioCreado })
                   <input
                     name="email"
                     type="email"
-                    placeholder="nombre.apellido@ksan.edu"
+                    placeholder="nombre.apellido@uandresbello.edu"
                     className={`form-control ${errorEmail ? "is-invalid" : ""}`}
                     value={form.email}
                     onChange={onChange}

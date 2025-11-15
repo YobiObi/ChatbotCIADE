@@ -28,7 +28,7 @@ export default function LoginUsuario() {
       return "No existe una cuenta con ese correo institucional.";
     }
     if (code === "auth/invalid-email") {
-      return "El correo ingresado no es válido. Revisa el formato nombre.apellido@ksan.edu.";
+      return "El correo ingresado no es válido. Revisa el formato nombre.apellido@uandresbello.edu.";
     }
     if (code === "auth/too-many-requests") {
       return "Demasiados intentos fallidos. Intenta nuevamente en unos minutos o restablece tu contraseña.";
@@ -49,11 +49,11 @@ export default function LoginUsuario() {
 
     if (name === "correo") {
       // 👇 tu formato institucional
-      const regex = /^[a-z]+\.[a-z]+@ksan\.edu$/i;
+      const regex = /^[a-z]+\.[a-z]+@uandresbello\.edu$/i;
       setErrorCorreo(
         regex.test(nextValue)
           ? ""
-          : "Formato inválido: nombre.apellido@ksan.edu"
+          : "Formato inválido: nombre.apellido@uandresbello.edu"
       );
     }
   };
@@ -135,7 +135,7 @@ export default function LoginUsuario() {
             <input
               type="email"
               name="correo"
-              placeholder="nombre.apellido@ksan.edu"
+              placeholder="nombre.apellido@uandresbello.edu"
               className={`form-control ${errorCorreo ? "is-invalid" : ""}`}
               value={formData.correo}
               onChange={handleChange}
