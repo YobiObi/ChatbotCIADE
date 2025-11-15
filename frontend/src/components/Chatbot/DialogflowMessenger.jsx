@@ -1,3 +1,4 @@
+// DialogflowMessenger.jsx
 import { useEffect } from "react";
 
 const DialogflowMessenger = () => {
@@ -21,11 +22,15 @@ const DialogflowMessenger = () => {
     dfMessenger.setAttribute("agent-id", "a6b5cbca-522c-4c20-9735-7e6eafa62cb0");
     dfMessenger.setAttribute("language-code", "es");
     dfMessenger.setAttribute("id", "chatbot-ciade");
+
+    // que se muestre ya expandido cuando esté visible
+    dfMessenger.setAttribute("expand", "true");
+
     dfMessenger.style.display = "none";
     dfMessenger.style.zIndex = "999"; // por si queda debajo del icono
     document.body.appendChild(dfMessenger);
 
-    // cerrar al hacer clic fuera, pero NO cuando hago clic en el botón
+    // cerrar al hacer clic fuera, pero NO cuando hago clic en el botón o en el bot
     const handleClickOutside = (e) => {
       const bot = document.getElementById("chatbot-ciade");
       const toggle = document.getElementById("chatbot-toggle");

@@ -90,11 +90,15 @@ export default function HeaderPrivado() {
             )}
 
             {user && (
-              <>
-                <span className="me-2 text-start" style={{ color: "#003366" }}>
+              <div className="d-flex align-items-center gap-2 flex-wrap ms-md-3">
+                <div
+                  className="text-start"
+                  style={{ color: "#003366", maxWidth: "260px" }} // ajusta el ancho a gusto
+                >
                   ¡Hola {nombreCompleto}!<br />
-                  <small className="text-muted">{infoInstitucional}</small>
-                </span>
+                  <small className="text-muted d-block">{infoInstitucional}</small>
+                </div>
+
                 <button
                   onClick={cerrarSesion}
                   className="btn btn-outline-danger btn-sm"
@@ -102,7 +106,7 @@ export default function HeaderPrivado() {
                 >
                   Cerrar Sesión
                 </button>
-              </>
+              </div>
             )}
           </nav>
         </div>
