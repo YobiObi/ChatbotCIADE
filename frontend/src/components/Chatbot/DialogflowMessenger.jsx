@@ -27,8 +27,29 @@ const DialogflowMessenger = () => {
     dfMessenger.setAttribute("expand", "true");
 
     dfMessenger.style.display = "none";
-    dfMessenger.style.zIndex = "999"; // por si queda debajo del icono
+    dfMessenger.style.zIndex = "999";
     document.body.appendChild(dfMessenger);
+
+    // 👇 NUEVO: ocultar el launcher/burbuja por defecto de Dialogflow
+    const hideDefaultLauncher = () => {
+      try {
+        const df = document.querySelector("df-messenger");
+        if (!df || !df.shadowRoot) return;
+
+        // En la mayoría de implementaciones el botón tiene id="widgetIcon"
+        const dfIcon = df.shadowRoot.querySelector("#widgetIcon");
+        if (dfIcon) {
+          dfIcon.style.display = "none";         // lo ocultamos
+          // alternativamente:
+          // dfIcon.style.pointerEvents = "none"; // solo desactivar clics
+        }
+      } catch (err) {
+        console.error("No se pudo ocultar el launcher de Dialogflow:", err);
+      }
+    };
+
+    // cuando el messenger termine de cargar, escondemos el icono original
+    dfMessenger.addEventListener("df-messenger-loaded", hideDefaultLauncher);
 
     // cerrar al hacer clic fuera, pero NO cuando hago clic en el botón o en el bot
     const handleClickOutside = (e) => {
@@ -53,6 +74,7 @@ const DialogflowMessenger = () => {
 
     return () => {
       document.removeEventListener("click", handleClickOutside);
+      dfMessenger.removeEventListener("df-messenger-loaded", hideDefaultLauncher);
     };
   }, []);
 
