@@ -28,7 +28,7 @@ export default function LoginUsuario() {
       return "No existe una cuenta con ese correo institucional.";
     }
     if (code === "auth/invalid-email") {
-      return "El correo ingresado no es válido. Revisa el formato nombre.apellido@uandresbello.edu.";
+      return "El correo ingresado no es válido. Revisa el formato nombre.apellido@uandresbello.edu o nombre.apellido@unab.cl.";
     }
     if (code === "auth/too-many-requests") {
       return "Demasiados intentos fallidos. Intenta nuevamente en unos minutos o restablece tu contraseña.";
@@ -42,18 +42,23 @@ export default function LoginUsuario() {
     return error?.message || "No pudimos iniciar sesión. Inténtalo nuevamente.";
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const nextValue = name === "correo" ? value.trim() : value;
-    setFormData({ ...formData, [name]: nextValue });
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  const nextValue = name === "correo" ? value.trim() : value;
+  setFormData({ ...formData, [name]: nextValue });
 
     if (name === "correo") {
-      // 👇 tu formato institucional
-      const regex = /^[a-z]+\.[a-z]+@uandresbello\.edu$/i;
+      const correo = nextValue.toLowerCase();
+
+      const esDominioValido =
+        correo.endsWith("@uandresbello.edu") ||
+        correo.endsWith("@unab.cl") ||
+        correo.endsWith("@gmail.com");
+
       setErrorCorreo(
-        regex.test(nextValue)
+        esDominioValido
           ? ""
-          : "Formato inválido: nombre.apellido@uandresbello.edu"
+          : "Formato inválido: usa un correo @uandresbello.edu o @unab.cl"
       );
     }
   };
@@ -135,7 +140,7 @@ export default function LoginUsuario() {
             <input
               type="email"
               name="correo"
-              placeholder="nombre.apellido@uandresbello.edu"
+              placeholder="nombre.apellido@uandresbello.edu / nombre.apellido@unab.cl"
               className={`form-control ${errorCorreo ? "is-invalid" : ""}`}
               value={formData.correo}
               onChange={handleChange}

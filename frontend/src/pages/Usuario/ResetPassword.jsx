@@ -23,9 +23,16 @@ export default function ResetPassword() {
     }
 
     // adapta esto a tu formato institucional si quieres
-    const regex = /^[a-z]+\.[a-z]+@uandresbello\.edu$/i;
-    if (!regex.test(email)) {
-      setErrorMsg("El correo ingresado no es válido. Usa tu correo institucional.");
+    const correo = email.toLowerCase();
+
+    if (
+      !correo.endsWith("@uandresbello.edu") &&
+      !correo.endsWith("@unab.cl") &&
+      !correo.endsWith("@gmail.com")
+    ) {
+      setErrorMsg(
+        "El correo debe pertenecer a los dominios @uandresbello.edu o @unab.cl."
+      );
       return;
     }
 
@@ -98,7 +105,7 @@ export default function ResetPassword() {
                   className="form-control"
                   value={email}
                   onChange={(e) => setEmail(e.target.value.trim())}
-                  placeholder="nombre.apellido@uandresbello.edu"
+                  placeholder="nombre.apellido@uandresbello.edu / nombre.apellido@unab.cl"
                   required
                 />
               </div>
