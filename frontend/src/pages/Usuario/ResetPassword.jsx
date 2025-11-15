@@ -34,6 +34,7 @@ export default function ResetPassword() {
 
       // origen actual (dev o prod)
       const origin = window.location.origin;
+      console.log("ORIGIN RESET PASSWORD:", origin);
 
       await sendPasswordResetEmail(auth, email, {
         // cuando el usuario termine en la página de Firebase,
