@@ -23,7 +23,7 @@ export default function ResetPassword() {
     }
 
     // adapta esto a tu formato institucional si quieres
-    const regex = /^[a-z]+\.[a-z]+@gmail\.com$/i;
+    const regex = /^[a-z]+\.[a-z]+@uandresbello\.edu$/i;
     if (!regex.test(email)) {
       setErrorMsg("El correo ingresado no es válido. Usa tu correo institucional.");
       return;
