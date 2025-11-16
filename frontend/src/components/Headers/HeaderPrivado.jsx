@@ -1,26 +1,21 @@
 import logo from "../../images/Logo-CIADE.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
-import { Link } from "react-router-dom";
 
 export default function HeaderPrivado() {
   const { user, cargando } = useAuth();
   const navigate = useNavigate();
 
   const cerrarSesion = async () => {
-      sessionStorage.setItem("skipLoginAlertOnce", "1");
-      try {
-        await signOut(auth);
-      } finally {
-        // ➜ Bandera para que RutaProtegida NO muestre el alert al llegar al login post-logout
-        // Navega al login y reemplaza el historial para evitar volver atrás a la ruta protegida
-        navigate("/login", { replace: true });
-      }
-    };
-
-  console.log("Renderizando Header:", { cargando, user });
+    sessionStorage.setItem("skipLoginAlertOnce", "1");
+    try {
+      await signOut(auth);
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
 
   if (cargando || !user?.role?.name) return null;
 
@@ -30,7 +25,6 @@ export default function HeaderPrivado() {
   const campus = user.campus?.nombre || "—";
 
   let infoInstitucional = "";
-
   if (rol === "Alumno") {
     infoInstitucional = `${carrera} — ${campus}`;
   } else if (rol === "Coordinacion") {
@@ -65,39 +59,88 @@ export default function HeaderPrivado() {
       {/* Logo y navegación */}
       <div className="bg-white">
         <div className="container d-flex flex-column flex-md-row justify-content-between align-items-center py-3">
-        <Link to="/" aria-label="Ir al inicio CIADE">
-          <img src={logo} alt="Logo UNAB" height="40" />
-        </Link>
+          {/* Logo: siempre misma pestaña */}
+          <div
+            onClick={() => navigate("/")}
+            style={{ cursor: "pointer" }}
+            aria-label="Ir al inicio CIADE"
+          >
+            <img src={logo} alt="Logo UNAB" height="40" />
+          </div>
 
           <nav className="d-flex flex-wrap gap-3 mt-3 mt-md-0 fw-semibold align-items-center">
-            <a href="https://ciade.unab.cl/quienes-somos/" className="nav-link-custom">¿Quiénes Somos?</a>
-            <a href="https://ciade.unab.cl/programa/" className="nav-link-custom">Programas</a>
-            <a href="https://ciade.unab.cl/noticias/" className="nav-link-custom">Noticias</a>
-            <a href="/coordinaciones" className="nav-link-custom">Contacto</a>
-            {!user && <a href="/acceso-usuario" className="nav-link-custom">Acceso Usuarios</a>}
-            <a href="/faq" className="nav-link-custom">Preguntas Frecuentes</a>
+            {/* Enlaces EXTERNOS en nueva pestaña */}
+            <a
+              href="https://ciade.unab.cl/quienes-somos/"
+              className="nav-link-custom"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              ¿Quiénes Somos?
+            </a>
+            <a
+              href="https://ciade.unab.cl/programa/"
+              className="nav-link-custom"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Programas
+            </a>
+            <a
+              href="https://ciade.unab.cl/noticias/"
+              className="nav-link-custom"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Noticias
+            </a>
+
+            {/* Enlaces INTERNOS con Link */}
+            <Link to="/coordinaciones" className="nav-link-custom">
+              Contacto
+            </Link>
+            {!user && (
+              <Link to="/acceso-usuario" className="nav-link-custom">
+                Acceso Usuarios
+              </Link>
+            )}
+            <Link to="/faq" className="nav-link-custom">
+              Preguntas Frecuentes
+            </Link>
 
             {rol === "Alumno" && (
               <>
-                <a href="/agendarcita" className="nav-link-custom">Agendar Cita</a>
-                <a href="/alumno/citas" className="nav-link-custom">Mis Citas</a>
+                <Link to="/agendarcita" className="nav-link-custom">
+                  Agendar Cita
+                </Link>
+                <Link to="/alumno/citas" className="nav-link-custom">
+                  Mis Citas
+                </Link>
               </>
             )}
+
             {rol === "Coordinacion" && (
-              <a href="/panel-coordinacion" className="nav-link-custom">Panel Coordinación</a>
+              <Link to="/panel-coordinacion" className="nav-link-custom">
+                Panel Coordinación
+              </Link>
             )}
+
             {rol === "Admin" && (
-              <a href="/panel-admin" className="nav-link-custom">Panel Administrativo</a>
+              <Link to="/panel-admin" className="nav-link-custom">
+                Panel Administrativo
+              </Link>
             )}
 
             {user && (
               <div className="d-flex align-items-center gap-2 flex-wrap ms-md-3">
                 <div
                   className="text-start"
-                  style={{ color: "#003366", maxWidth: "260px" }} // ajusta el ancho a gusto
+                  style={{ color: "#003366", maxWidth: "260px" }}
                 >
                   ¡Hola {nombreCompleto}!<br />
-                  <small className="text-muted d-block">{infoInstitucional}</small>
+                  <small className="text-muted d-block">
+                    {infoInstitucional}
+                  </small>
                 </div>
 
                 <button
