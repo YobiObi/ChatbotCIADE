@@ -97,24 +97,25 @@
   flex-wrap: wrap;
 }
 
-/*CitasAlumno*/
 .encabezado-citas th {
   background-color: #003366 !important;
   color: white !important;
-  font-weight: bold !important;
-}
-
-/* Encabezado */
-.encabezado-citas th {
-  background-color: #003366 !important;
-  color: white !important;
-  font-weight: bold !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem;          
+  padding: 0.5rem 0.4rem;      
+  white-space: normal;         
+  vertical-align: middle;
 }
 
 /* La tabla puede seguir con layout fijo */
 .tabla-citas {
-  table-layout: fixed;
+  border-collapse: collapse;
   width: 100%;
+}
+
+.tabla-citas th.col-id,
+.tabla-citas td.col-id {
+  width: 60px;
 }
 
 /* El <td> define el ancho de columna (sin forzar overflow aquí) */

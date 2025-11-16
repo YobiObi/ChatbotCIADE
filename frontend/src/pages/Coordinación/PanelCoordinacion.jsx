@@ -139,10 +139,10 @@ export default function PanelCoordinacion() {
             <table className="table table-bordered table-hover tabla-citas">
               <thead className="table-light encabezado-citas text-center">
                 <tr>
-                  <th style={{ width: "3%" }}>ID</th>
-                  <th style={{ width: "9%" }}>RUT</th>
+                  <th className="col-id">ID</th>
+                  <th>RUT</th>
                   <th>Estudiante</th>
-                  <th style={{ width: "12%" }}>Correo</th>
+                  <th>Correo</th>
                   <th>Carrera</th>
                   <th>Facultad</th>
                   <th>Campus</th>
@@ -163,7 +163,10 @@ export default function PanelCoordinacion() {
 
                   return (
                     <tr key={cita.id}>
-                      <td className="text-muted fw-semibold" style={{ fontFamily: "monospace", width: "5%" }}>
+                      <td
+                        className="text-muted fw-semibold col-id"
+                        style={{ fontFamily: "monospace" }}
+                      >
                         {cita.id}
                       </td>
 
