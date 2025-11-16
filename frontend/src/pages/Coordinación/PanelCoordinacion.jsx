@@ -237,7 +237,7 @@ ${motivo}
                     } ${cita.estudiante?.lastName || ""}`.trim();
 
                     return (
-                      <tr key={cita.id}>
+                      <tr className="text-center" key={cita.id}>
                         <td
                           className="text-muted fw-semibold col-id"
                           style={{ fontFamily: "monospace" }}
