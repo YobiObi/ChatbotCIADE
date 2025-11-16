@@ -264,7 +264,7 @@ ${motivo}
                           </span>
                         </td>
 
-                        <td>
+                        <td className="text-center">
                           <div className="acciones-cita d-flex gap-2 flex-wrap">
                             {/* Ver detalle en modal */}
                             <button
