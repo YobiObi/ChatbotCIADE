@@ -1,6 +1,26 @@
 export default function ModalTexto({ visible, title = "Detalle", text = "", onClose }) {
   if (!visible) return null;
 
+  // Convertimos cada línea en un bloque <p>
+  const formatted = text
+    .split("\n")
+    .map((linea, i) => {
+      if (!linea.includes(":")) {
+        // líneas sin título → texto normal
+        return <p key={i} className="mt-1">{linea}</p>;
+      }
+
+      const [label, ...resto] = linea.split(":");
+      const valor = resto.join(":").trim();
+
+      return (
+        <p key={i} className="mt-2">
+          <strong>{label}:</strong>{" "}
+          <span>{valor}</span>
+        </p>
+      );
+    });
+
   return (
     <div
       className="modal fade show"
@@ -11,37 +31,18 @@ export default function ModalTexto({ visible, title = "Detalle", text = "", onCl
       }}
       tabIndex="-1"
     >
-      <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "650px" }}>
-        <div className="modal-content" style={{ maxHeight: "75vh", overflowY: "auto" }}>
-
-          {/* --- HEADER INSTITUCIONAL CIADE --- */}
-          <div
-            className="modal-header bg-unab"
-            style={{
-              color: "white",
-              borderBottom: "3px solid #002244"
-            }}
-          >
-            <h5 className="modal-title fw-bold">{title}</h5>
+      <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "600px" }}>
+        <div className="modal-content" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          
+          {/* ENCABEZADO INSTITUCIONAL */}
+          <div style={{ color: "white" }} className="modal-header bg-unab">
+            <h5 className="modal-title">{title}</h5>
             <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
           </div>
 
-          {/* --- CUERPO --- */}
+          {/* CONTENIDO FORMATEADO */}
           <div className="modal-body">
-            {/* Elimina saltos dobles y aplica formato */}
-            <div
-              dangerouslySetInnerHTML={{
-                __html: text
-                  .replace(/\n\n/g, "<br/>")
-                  .replace(/^(.+?):/gm, "<strong>$1:</strong>") // negrita antes de :
-              }}
-              style={{
-                whiteSpace: "pre-wrap",
-                lineHeight: "1.55",
-                fontSize: "0.95rem",
-                color: "#333"
-              }}
-            />
+            {formatted}
           </div>
 
         </div>
