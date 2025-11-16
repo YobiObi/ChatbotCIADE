@@ -186,6 +186,16 @@
   text-decoration: underline;
 }
 
+/* Centrar columna Acciones */
+.tabla-citas td.col-acciones {
+  text-align: center !important;
+}
+
+/* Centrar el contenedor que tiene los botones */
+.tabla-citas td.col-acciones .acciones-cita {
+  justify-content: center !important;
+}
+
 /* Botones pequeños un poco más compactos */
 .btn-sm {
   padding: 4px 8px !important;
