@@ -9,11 +9,10 @@ export default function Home() {
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        height: "100vh",
-        width: "105%",
+        minHeight: "100vh",
+        width: "100%",
       }}
     >
-      {/* Si quieres agregar algo encima de la imagen, como un logo o botón, lo puedes poner aquí */}
     </div>
   );
 }
