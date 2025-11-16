@@ -4,18 +4,46 @@ export default function ModalTexto({ visible, title = "Detalle", text = "", onCl
   return (
     <div
       className="modal fade show"
-      style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
+      style={{
+        display: "block",
+        backgroundColor: "rgba(0,0,0,0.5)",
+        zIndex: 1050
+      }}
       tabIndex="-1"
     >
-      <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "600px" }}>
-        <div className="modal-content" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          <div className="modal-header">
-            <h5 className="modal-title">{title}</h5>
-            <button type="button" className="btn-close" onClick={onClose}></button>
+      <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "650px" }}>
+        <div className="modal-content" style={{ maxHeight: "75vh", overflowY: "auto" }}>
+
+          {/* --- HEADER INSTITUCIONAL CIADE --- */}
+          <div
+            className="modal-header bg-unab"
+            style={{
+              color: "white",
+              borderBottom: "3px solid #002244"
+            }}
+          >
+            <h5 className="modal-title fw-bold">{title}</h5>
+            <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
           </div>
+
+          {/* --- CUERPO --- */}
           <div className="modal-body">
-            <p style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{text}</p>
+            {/* Elimina saltos dobles y aplica formato */}
+            <div
+              dangerouslySetInnerHTML={{
+                __html: text
+                  .replace(/\n\n/g, "<br/>")
+                  .replace(/^(.+?):/gm, "<strong>$1:</strong>") // negrita antes de :
+              }}
+              style={{
+                whiteSpace: "pre-wrap",
+                lineHeight: "1.55",
+                fontSize: "0.95rem",
+                color: "#333"
+              }}
+            />
           </div>
+
         </div>
       </div>
     </div>

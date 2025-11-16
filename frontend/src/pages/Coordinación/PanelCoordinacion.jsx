@@ -268,7 +268,7 @@ ${motivo}
                           <div className="acciones-cita d-flex gap-2 flex-wrap">
                             {/* Ver detalle en modal */}
                             <button
-                              className="btn btn-outline-primary btn-sm"
+                              className="btn-institucional-outline-sm"
                               onClick={() => abrirDetalleCita(cita)}
                             >
                               Ver detalle

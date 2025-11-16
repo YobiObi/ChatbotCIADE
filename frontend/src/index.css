@@ -39,7 +39,7 @@
 }
 
 .nav-link-custom:hover {
-  color: #003366; /* o el color institucional */
+  color: #003366; /* color institucional */
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -63,7 +63,7 @@
 }
 
 .faq-banner {
-  background-image: url('/frontend/src/images/manos.jpg');
+  background-image: url("/frontend/src/images/manos.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -71,7 +71,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding-left: 100px; /* Opcional: Agregar un poco de espacio a la izquierda */
+  padding-left: 100px; /* Opcional: espacio a la izquierda */
 }
 
 .faq-banner h1 {
@@ -83,7 +83,7 @@
 }
 
 .faq-banner h1::before {
-  content: '';
+  content: "";
   display: inline-block;
   width: 5px; /* Grosor de la línea */
   height: 30px; /* Altura de la línea */
@@ -97,31 +97,65 @@
   flex-wrap: wrap;
 }
 
+/* ============================
+   TABLAS DE CITAS
+   ============================ */
+
+/* Encabezado de la tabla */
 .encabezado-citas th {
   background-color: #003366 !important;
   color: white !important;
   font-weight: 600 !important;
-  font-size: 0.85rem;          
-  padding: 0.5rem 0.4rem;      
-  white-space: normal;         
+  font-size: 0.85rem;
+  padding: 0.5rem 0.4rem;
+  white-space: nowrap;
   vertical-align: middle;
 }
 
-/* La tabla puede seguir con layout fijo */
+/* Tabla compacta y alineada */
 .tabla-citas {
-  border-collapse: collapse;
   width: 100%;
+  border-collapse: collapse !important;
+  table-layout: fixed;
 }
 
+.tabla-citas th,
+.tabla-citas td {
+  padding: 6px 8px !important; /* filas más pequeñas */
+  font-size: 0.92rem;
+  vertical-align: middle !important;
+}
+
+.tabla-citas td {
+  border-color: #d5d9e0 !important;
+}
+
+/* Columnas específicas */
 .tabla-citas th.col-id,
 .tabla-citas td.col-id {
-  width: 60px;
+  width: 55px;
 }
 
-/* El <td> define el ancho de columna (sin forzar overflow aquí) */
+/* Por si luego quieres ajustar otras columnas */
+.tabla-citas th.col-rut,
+.tabla-citas td.col-rut {
+  width: 140px;
+}
+
+.tabla-citas th.col-estado,
+.tabla-citas td.col-estado {
+  width: 120px;
+}
+
+.tabla-citas th.col-acciones,
+.tabla-citas td.col-acciones {
+  width: 160px;
+}
+
+/* Columnas largas en otras vistas (alumno, etc.) */
 .tabla-citas td.descripcion-col,
 .tabla-citas td.motivo-col {
-  width: 140px;          /* ajusta si quieres más/menos */
+  width: 140px; /* ajusta si quieres más/menos */
   vertical-align: middle;
   font-size: 0.9rem;
 }
@@ -135,7 +169,7 @@
   text-overflow: ellipsis;
 }
 
-/* columna de correo */
+/* columna de correo (otras tablas que la usen) */
 .tabla-citas td.correo-col {
   vertical-align: middle;
   /* por si el correo tiene palabra muy larga */
@@ -150,6 +184,12 @@
 
 .tabla-citas td.correo-col .btn-link:hover {
   text-decoration: underline;
+}
+
+/* Botones pequeños un poco más compactos */
+.btn-sm {
+  padding: 4px 8px !important;
+  font-size: 0.85rem !important;
 }
 
 /* ============================
@@ -206,7 +246,7 @@
 /* Pequeño */
 .btn-institucional-sm,
 .btn-institucional-outline-sm {
-  font-size: 0.90rem;
+  font-size: 0.9rem;
   padding: 0.4rem 0.9rem;
   border-radius: 5px;
   background-color: #003366;
@@ -270,23 +310,26 @@
   color: #0b437c;
   border-color: #dfe3e8;
 }
+
 .page-link:hover {
   color: #003366;
   background-color: #f2f6fb;
   border-color: #cfd6de;
 }
+
 .page-item.active .page-link {
   background-color: #003366;
   border-color: #003366;
   color: #ffffff;
 }
+
 .page-item.disabled .page-link {
   color: #a0a7b2;
   border-color: #e6eaee;
 }
 
 .btn-warning:hover {
-    background-color: #e0a800; /* Un color más oscuro para el fondo */
-    border-color: #d39e00; /* Un color para el borde */
-    color: white; /* Puedes cambiar el color del texto si lo deseas */
+  background-color: #e0a800; /* Un color más oscuro para el fondo */
+  border-color: #d39e00; /* Un color para el borde */
+  color: white; /* Puedes cambiar el color del texto si lo deseas */
 }
