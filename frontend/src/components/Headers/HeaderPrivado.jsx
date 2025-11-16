@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
+import { Link } from "react-router-dom";
 
 export default function HeaderPrivado() {
   const { user, cargando } = useAuth();
@@ -64,9 +65,9 @@ export default function HeaderPrivado() {
       {/* Logo y navegación */}
       <div className="bg-white">
         <div className="container d-flex flex-column flex-md-row justify-content-between align-items-center py-3">
-          <a href="/" target="_blank" rel="noopener noreferrer" aria-label="Ir al sitio institucional">
-            <img src={logo} alt="Logo UNAB" height="40" />
-          </a>
+        <Link to="/" aria-label="Ir al inicio CIADE">
+          <img src={logo} alt="Logo UNAB" height="40" />
+        </Link>
 
           <nav className="d-flex flex-wrap gap-3 mt-3 mt-md-0 fw-semibold align-items-center">
             <a href="https://ciade.unab.cl/quienes-somos/" className="nav-link-custom">¿Quiénes Somos?</a>

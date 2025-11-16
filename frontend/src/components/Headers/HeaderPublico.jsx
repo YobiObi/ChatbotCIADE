@@ -1,4 +1,5 @@
 import logo from "../../images/Logo-CIADE.png";
+import { Link } from "react-router-dom";
 
 export default function HeaderPublico() {
   return (
@@ -24,9 +25,9 @@ export default function HeaderPublico() {
 
       <div className="bg-white">
         <div className="container d-flex justify-content-between align-items-center py-3">
-          <a href="/" target="_blank" rel="noopener noreferrer">
-            <img src={logo} alt="Logo UNAB" height="40" />
-          </a>
+        <Link to="/" aria-label="Ir al inicio CIADE">
+          <img src={logo} alt="Logo UNAB" height="40" />
+        </Link>
           <nav className="d-flex gap-3 fw-semibold">
             <a href="https://ciade.unab.cl/quienes-somos/" className="nav-link-custom">¿Quiénes Somos?</a>
             <a href="https://ciade.unab.cl/programa/" className="nav-link-custom">Programas</a>
