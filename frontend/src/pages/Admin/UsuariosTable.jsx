@@ -118,7 +118,7 @@ export default function UsuariosTable({ usuarios }) {
         <button
           className="btn btn-danger btn-sm"
           onClick={async () => {
-            const ok = window.confirm(`¿Eliminar ${seleccionados.length} usuario(s)? Esta acción también intentará borrar sus cuentas en Firebase.`);
+            const ok = window.confirm(`¿Eliminar ${seleccionados.length} usuario(s)? Esta acción es irreversible.`);
             if (!ok) return;
             try {
               const token = await auth.currentUser.getIdToken();

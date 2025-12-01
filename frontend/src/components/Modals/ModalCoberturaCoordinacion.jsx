@@ -68,7 +68,7 @@ export default function ModalCoberturaCoordinacion({
 
     // Evitar duplicados locales
     if (rows.some(r => Number(r.campusId) === campusIdNum && Number(r.carreraId) === carreraIdNum)) {
-      alert("Esta cobertura ya existe para el/la coordinador/a.");
+      alert("Esta cobertura ya existe para la coordinación.");
       return;
     }
 

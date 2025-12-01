@@ -26,7 +26,7 @@ const faqsGeneral = [
   {
     question: "¿Qué debo hacer para ser Tutor/a CIADE?",
     intro:
-      "Para ser Tutor/a CIADE, debes contactarte directamente con tu coordinador/a CIADE o completar el formulario de postulación enviado por correo que se habilita en cada nuevo semestre.",
+      "Para ser Tutor/a CIADE, debes contactarte directamente con tu coordinación CIADE o completar el formulario de postulación enviado por correo que se habilita en cada nuevo semestre.",
     listTitle: "Debes cumplir con los siguientes requisitos:",
     listItems: [
       "Ser estudiante regular de pregrado UNAB.",
